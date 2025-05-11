@@ -2,6 +2,7 @@ package service
 
 import (
 	"database/sql"
+
 	"go-nextjs-dashboard/config"
 	"go-nextjs-dashboard/model"
 	"go-nextjs-dashboard/utils"
@@ -70,10 +71,7 @@ func (s *CustomerService) GetFilteredCustomers(search string) ([]FilteredCustome
 			SUM(CASE WHEN invoices.status = 'paid' THEN invoices.amount ELSE 0 END) AS total_paid
 		`).
 		Joins("LEFT JOIN invoices ON customers.id = invoices.customer_id").
-		Where(`
-			customers.name LIKE @search OR
-        	customers.email LIKE @search
-		`, sql.Named("search", "%"+search+"%")).
+		Where("customers.name LIKE @search OR customers.email LIKE @search", sql.Named("search", "%"+search+"%")).
 		Group("customers.id, customers.name, customers.email, customers.image_url").
 		Order("customers.name").
 		Scan(&result).

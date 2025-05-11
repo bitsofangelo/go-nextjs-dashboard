@@ -2,11 +2,13 @@ package http
 
 import (
 	"errors"
+	"log/slog"
 	"net/http"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/limiter"
+	"github.com/google/uuid"
 )
 
 func init() {
@@ -15,6 +17,7 @@ func init() {
 	}
 }
 
+// ValidationResponse maps the validation errors into a JSON response
 func ValidationResponse() fiber.Handler {
 	return func(c fiber.Ctx) error {
 		err := c.Next()
@@ -45,5 +48,32 @@ func ValidationResponse() fiber.Handler {
 		}
 
 		return err
+	}
+}
+
+// RequestID extracts the request id from the request header or generates a new one
+func RequestID() fiber.Handler {
+	return func(c fiber.Ctx) error {
+		const hdr = "X-Request-Id"
+
+		id := c.Get(hdr)
+		if len(id) == 0 || len(id) > 64 {
+			id = uuid.NewString()
+		}
+
+		c.Request().Header.Set(hdr, id)
+		c.Response().Header.Set(hdr, id)
+
+		return c.Next()
+	}
+}
+
+// RequestLogger makes logger with request context
+func RequestLogger(logger *slog.Logger) fiber.Handler {
+	return func(c fiber.Ctx) error {
+		log := logger.With("req_id", c.Get("X-Request-Id"), "path", c.Path())
+		c.Locals("log", log)
+
+		return c.Next()
 	}
 }

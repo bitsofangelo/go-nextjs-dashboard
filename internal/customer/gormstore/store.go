@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log/slog"
+	"time"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -51,15 +53,17 @@ func toEntity(c customerModel) customer.Customer {
 }
 
 type Store struct {
-	db *gorm.DB
+	db     *gorm.DB
+	logger *slog.Logger
 }
 
 // compile‑time check that we satisfy the port
 var _ customer.Store = (*Store)(nil)
 
-func NewStore(db *gorm.DB) *Store {
+func New(db *gorm.DB, logger *slog.Logger) *Store {
 	return &Store{
-		db: db,
+		db:     db,
+		logger: logger,
 	}
 }
 
@@ -123,6 +127,8 @@ func (s *Store) Save(ctx context.Context, c customer.Customer) (*customer.Custom
 func (s *Store) SearchWithInvoiceTotals(ctx context.Context, search string) ([]customer.WithInvoiceTotals, error) {
 	var out []customer.WithInvoiceTotals
 
+	start := time.Now()
+
 	err := s.db.WithContext(ctx).
 		Model(&customerModel{}).
 		Select(`
@@ -143,5 +149,6 @@ func (s *Store) SearchWithInvoiceTotals(ctx context.Context, search string) ([]c
 	if err != nil {
 		return nil, fmt.Errorf("invoice totals query: %w", err)
 	}
+	s.logger.Debug("fetch customer with invoice", "elapsed", time.Since(start).String())
 	return out, nil
 }

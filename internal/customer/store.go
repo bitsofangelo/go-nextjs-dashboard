@@ -15,4 +15,15 @@ type Store interface {
 	Find(ctx context.Context, id uuid.UUID) (*Customer, error)
 	ExistsByEmail(ctx context.Context, email string) (bool, error)
 	Save(ctx context.Context, c Customer) (*Customer, error)
+	SearchWithInvoiceTotals(ctx context.Context, search string) ([]WithInvoiceTotals, error)
+}
+
+type WithInvoiceTotals struct {
+	ID            uuid.UUID
+	Name          string
+	Email         string
+	ImageURL      *string
+	TotalInvoices int64
+	TotalPending  float64
+	TotalPaid     float64
 }

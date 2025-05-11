@@ -6,7 +6,10 @@ import (
 )
 
 func rateLimiter(max ...int) fiber.Handler {
-	return limiter.New(limiter.Config{
-		Max: max[0],
-	})
+	var m int
+	if len(max) > 0 {
+		m = max[0]
+	}
+
+	return limiter.New(limiter.Config{Max: m})
 }

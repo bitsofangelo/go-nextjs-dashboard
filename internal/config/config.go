@@ -11,18 +11,27 @@ import (
 
 type Config struct {
 	AppPort string `mapstructure:"APP_PORT"`
-	DBHost  string `mapstructure:"DB_HOST"`
-	DBPort  int    `mapstructure:"DB_PORT"`
-	DBUser  string `mapstructure:"DB_USER"`
-	DBPass  string `mapstructure:"DB_PASS"`
-	DBName  string `mapstructure:"DB_NAME"`
 
+	DBHost string `mapstructure:"DB_HOST"`
+	DBPort int    `mapstructure:"DB_PORT"`
+	DBUser string `mapstructure:"DB_USER"`
+	DBPass string `mapstructure:"DB_PASS"`
+	DBName string `mapstructure:"DB_NAME"`
+
+	LogLevel  string `mapstructure:"LOG_LEVEL"`  // "debug" | "info" | "warn" | "error"
+	LogFormat string `mapstructure:"LOG_FORMAT"` // "text" | "json"
+
+	// Deprecated TODO: to be removed
 	DatabaseURL string `mapstructure:"MYSQL_URI"`
 	ServerPort  string `mapstructure:"SERVER_PORT"`
 }
 
+// Cfg Deprecated
+// TODO: to be removed
 var Cfg Config
 
+// LoadConfig Deprecated
+// TODO: to be removed
 func LoadConfig() {
 	if err := godotenv.Load(".env"); err != nil {
 		log.Fatal(fmt.Errorf("error loading .env file: %w", err))

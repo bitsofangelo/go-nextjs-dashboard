@@ -3,6 +3,7 @@ package http
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
@@ -17,6 +18,7 @@ var validator = http.Validator
 func RegisterHTTP(r fiber.Router, svc *service.Service) {
 	h := newHandler(svc)
 	r.Get("/customers", h.List)
+	r.Get("/customers/filtered", h.SearchWithInvoiceTotals)
 	r.Get("/customers/:id", h.Get)
 	r.Post("/customers", h.Create, rateLimiter(5))
 }
@@ -32,6 +34,7 @@ func newHandler(svc *service.Service) *handler {
 }
 
 func (h *handler) List(c fiber.Ctx) error {
+	time.Sleep(5 * time.Second)
 	cust, err := h.svc.List(c.Context())
 	if err != nil {
 		switch {
@@ -69,7 +72,9 @@ func (h *handler) Get(c fiber.Ctx) error {
 }
 
 func (h *handler) Create(c fiber.Ctx) error {
-	var req CreateRequest
+	log := http.Logger(c)
+
+	var req createRequest
 
 	if err := c.Bind().Body(&req); err != nil {
 		return fmt.Errorf("creaate customer bind request body: %w", err)
@@ -86,6 +91,7 @@ func (h *handler) Create(c fiber.Ctx) error {
 	if err != nil {
 		switch {
 		case errors.Is(err, customer.ErrEmailAlreadyTaken):
+			log.Error("email already taken")
 			return fiber.NewError(fiber.StatusConflict, "Email already taken.")
 		default:
 			return fiber.NewError(fiber.StatusInternalServerError, fmt.Sprintf("Failed to create customer: %s", err))
@@ -93,4 +99,16 @@ func (h *handler) Create(c fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{"data": toResponse(cust)})
+}
+
+func (h *handler) SearchWithInvoiceTotals(c fiber.Ctx) error {
+	search := c.Query("search")
+	result, err := h.svc.SearchWithInvoiceTotals(c.Context(), search)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, fmt.Sprintf("Failed to retrieve customer: %s", err))
+	}
+
+	return c.JSON(fiber.Map{
+		"data": toResponseWithInvoicesTotals(result),
+	})
 }

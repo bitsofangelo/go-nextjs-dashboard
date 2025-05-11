@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/google/uuid"
 
@@ -10,12 +11,14 @@ import (
 )
 
 type Service struct {
-	repo customer.Store
+	repo   customer.Store
+	logger *slog.Logger
 }
 
-func NewService(repo customer.Store) *Service {
+func New(repo customer.Store, logger *slog.Logger) *Service {
 	return &Service{
-		repo: repo,
+		repo:   repo,
+		logger: logger,
 	}
 }
 
@@ -46,6 +49,7 @@ func (s *Service) Create(ctx context.Context, c customer.Customer) (*customer.Cu
 	}
 
 	if exists {
+		s.logger.WarnContext(ctx, "email already taken", slog.String("email", c.Email))
 		return nil, customer.ErrEmailAlreadyTaken
 	}
 
@@ -55,4 +59,13 @@ func (s *Service) Create(ctx context.Context, c customer.Customer) (*customer.Cu
 		return nil, fmt.Errorf("save customer: %w", err)
 	}
 	return cust, nil
+}
+
+func (s *Service) SearchWithInvoiceTotals(ctx context.Context, search string) ([]customer.WithInvoiceTotals, error) {
+	result, err := s.repo.SearchWithInvoiceTotals(ctx, search)
+	if err != nil {
+		return nil, fmt.Errorf("search with invoice totals: %w", err)
+	}
+
+	return result, nil
 }

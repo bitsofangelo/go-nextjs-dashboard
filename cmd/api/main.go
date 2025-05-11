@@ -1,78 +1,56 @@
 package main
 
 import (
+	"context"
 	"errors"
-	"fmt"
-	"log"
+	"log/slog"
 	"os"
-
-	"github.com/gofiber/fiber/v3"
-	fiberlog "github.com/gofiber/fiber/v3/log"
-	"github.com/gofiber/fiber/v3/middleware/limiter"
-	"github.com/gofiber/fiber/v3/middleware/logger"
+	"os/signal"
+	"syscall"
 
 	"go-nextjs-dashboard/internal/config"
-	"go-nextjs-dashboard/internal/customer/gormstore"
-	customerhttp "go-nextjs-dashboard/internal/customer/http"
-	"go-nextjs-dashboard/internal/customer/service"
+	customerstore "go-nextjs-dashboard/internal/customer/gormstore"
+	customersvc "go-nextjs-dashboard/internal/customer/service"
 	database "go-nextjs-dashboard/internal/db"
-	"go-nextjs-dashboard/internal/http"
+	"go-nextjs-dashboard/internal/logger"
+	"go-nextjs-dashboard/internal/server"
 )
 
 func main() {
-	// load config once
+	// load config
 	cfg, err := config.Load()
 	if err != nil {
-		log.Fatalf("cannot load config: %v", err)
+		slog.Error("failed to load config", "error", err)
+		os.Exit(1)
 	}
 
+	// setup logger
+	rootLog := logger.New(cfg)
+	slog.SetDefault(rootLog) // optional global fallback
+
+	// open db connection
 	db, err := database.Open(cfg)
 	if err != nil {
-		log.Fatalf("cannot open db: %v", err)
+		rootLog.Error("failed to open database", "error", err)
+		os.Exit(1)
 	}
 
-	customerStore := gormstore.NewStore(db)
-	customerService := service.NewService(customerStore)
+	// wire dependencies
+	custStore := customerstore.New(db, rootLog.With("component", "gormstore"))
+	custSvc := customersvc.New(custStore, rootLog.With("component", "customer-service"))
 
-	// Setup log file
-	f, err := os.OpenFile("fiber.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	if err != nil {
-		log.Fatal(fmt.Errorf("error opening log file: %w", err))
+	// handle signals for graceful shutdown
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	// instantiate server
+	srv := server.New(ctx, cfg, rootLog.With("component", "http"), custSvc)
+
+	// start server
+	if err = srv.Run(); err != nil && !errors.Is(err, context.Canceled) {
+		rootLog.Error("failed to start server", "error", err)
+		os.Exit(1)
 	}
-	defer f.Close()
 
-	fiberlog.SetOutput(f)
-
-	app := fiber.New(fiber.Config{
-		ErrorHandler: func(c fiber.Ctx, err error) error {
-			code := fiber.StatusInternalServerError
-			message := "Internal Server Error"
-
-			var fe *fiber.Error
-			if errors.As(err, &fe) {
-				if fe.Code != code {
-					code = fe.Code
-					message = fe.Message
-				}
-			}
-
-			if code == fiber.StatusInternalServerError {
-				fiberlog.Error(err.Error())
-			}
-
-			return c.Status(code).JSON(fiber.Map{"message": message})
-		},
-	})
-
-	app.Use(logger.New())
-	app.Use(limiter.New(limiter.Config{Max: 10}))
-	app.Use(http.ValidationResponse())
-
-	api := app.Group("/api")
-	customerhttp.RegisterHTTP(api, customerService)
-
-	err = app.Listen(":" + cfg.AppPort)
-	if err != nil {
-		log.Fatalf("cannot start server: %v", err)
-	}
+	rootLog.Info("server exited")
 }
