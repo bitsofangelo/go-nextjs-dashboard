@@ -73,7 +73,7 @@ func (s *Server) Run() error {
 
 		// graceful shutdown
 		if err := s.app.ShutdownWithContext(shutCtx); err != nil {
-			return fmt.Errorf("graceful shutdown failed: %w", err)
+			return fmt.Errorf("graceful shutdown failed, forcing close: %w", err)
 		}
 		return nil
 	}
@@ -95,5 +95,7 @@ func errHandler(c fiber.Ctx, err error) error {
 		http.Logger(c).ErrorContext(c.Context(), err.Error())
 	}
 
-	return c.Status(code).JSON(fiber.Map{"message": message})
+	return c.Status(code).JSON(http.ErrResponse{
+		Message: message,
+	})
 }

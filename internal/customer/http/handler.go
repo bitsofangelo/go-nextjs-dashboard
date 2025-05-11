@@ -45,8 +45,8 @@ func (h *handler) List(c fiber.Ctx) error {
 		}
 	}
 
-	return c.JSON(fiber.Map{
-		"data": toResponses(cust),
+	return c.JSON(http.Response{
+		Data: toResponses(cust),
 	})
 }
 
@@ -66,8 +66,8 @@ func (h *handler) Get(c fiber.Ctx) error {
 		}
 	}
 
-	return c.JSON(fiber.Map{
-		"data": toResponse(cust),
+	return c.JSON(http.Response{
+		Data: toResponse(cust),
 	})
 }
 
@@ -94,21 +94,21 @@ func (h *handler) Create(c fiber.Ctx) error {
 			log.Error("email already taken")
 			return fiber.NewError(fiber.StatusConflict, "Email already taken.")
 		default:
-			return fiber.NewError(fiber.StatusInternalServerError, fmt.Sprintf("Failed to create customer: %s", err))
+			return fiber.NewError(fiber.StatusInternalServerError, fmt.Sprintf("create customer: %s", err))
 		}
 	}
 
-	return c.JSON(fiber.Map{"data": toResponse(cust)})
+	return c.JSON(http.Response{Data: toResponse(cust)})
 }
 
 func (h *handler) SearchWithInvoiceTotals(c fiber.Ctx) error {
 	search := c.Query("search")
 	result, err := h.svc.SearchWithInvoiceTotals(c.Context(), search)
 	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, fmt.Sprintf("Failed to retrieve customer: %s", err))
+		return fiber.NewError(fiber.StatusInternalServerError, fmt.Sprintf("retrieve customer: %s", err))
 	}
 
-	return c.JSON(fiber.Map{
-		"data": toResponseWithInvoicesTotals(result),
+	return c.JSON(http.Response{
+		Data: toResponseWithInvoicesTotals(result),
 	})
 }

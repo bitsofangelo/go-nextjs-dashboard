@@ -17,33 +17,43 @@ func init() {
 	}
 }
 
+type Response struct {
+	Data any `json:"data"`
+}
+
+type ErrResponse struct {
+	Message string `json:"message"`
+}
+
+type ValidationErrResponse struct {
+	Message string            `json:"message"`
+	Errors  map[string]string `json:"errors"`
+}
+
 // ValidationResponse maps the validation errors into a JSON response
 func ValidationResponse() fiber.Handler {
 	return func(c fiber.Ctx) error {
 		err := c.Next()
 
 		if err != nil {
-			var ves validator.ValidationErrors
+			var vErrs validator.ValidationErrors
 
-			if errors.As(err, &ves) {
+			if errors.As(err, &vErrs) {
 				trans, found := Uni.GetTranslator(c.Get("Accept-Language"))
 				if !found {
 					trans, _ = Uni.GetTranslator("en")
 				}
 
-				out := make(map[string]string, len(ves))
-				for _, e := range ves {
+				out := make(map[string]string, len(vErrs))
+				for _, e := range vErrs {
 					out[e.Field()] = e.Translate(trans)
 				}
 
-				return c.Status(http.StatusUnprocessableEntity).JSON(struct {
-					Message string            `json:"message"`
-					Errors  map[string]string `json:"errors"`
-				}{
-					Message: "The given data was invalid.",
-					Errors:  out,
-				})
-
+				return c.Status(http.StatusUnprocessableEntity).
+					JSON(ValidationErrResponse{
+						Message: "The given data was invalid.",
+						Errors:  out,
+					})
 			}
 		}
 
