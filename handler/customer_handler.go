@@ -19,12 +19,20 @@ func NewCustomerHandler() *CustomerHandler {
 }
 
 func (h *CustomerHandler) GetCustomers(c *fiber.Ctx) error {
+	// paginated, err := h.customerService.GetPaginatedCustomers(1, 5)
+	//
+	// if err != nil {
+	// 	return err
+	// }
+	//
+	// return c.Status(200).JSON(paginated)
 	customers, err := h.customerService.GetCustomers()
 	if err != nil {
 		return err
 	}
 
 	return c.Status(200).JSON(response.NewCustomersResponse(customers))
+	// return c.Status(200).JSON(customers)
 }
 
 func (h *CustomerHandler) GetFilteredCustomers(c *fiber.Ctx) error {

@@ -2,12 +2,15 @@ package main
 
 import (
 	"errors"
+	"fmt"
+	"os"
+	"runtime/debug"
+
 	"go-nextjs-dashboard/config"
+	config2 "go-nextjs-dashboard/internal/config"
 	"go-nextjs-dashboard/model"
 	"go-nextjs-dashboard/router"
 	my_validator "go-nextjs-dashboard/validator"
-	"os"
-	"runtime/debug"
 
 	"github.com/gofiber/fiber/v2/log"
 	"github.com/gofiber/fiber/v2/middleware/logger"
@@ -44,15 +47,15 @@ type Address struct {
 func main() {
 	f, err := os.OpenFile("fiber.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
-		return
+		log.Fatal(fmt.Errorf("failed to open/create fiber.log file: %w", err))
 	}
 	defer f.Close()
 	log.SetOutput(f)
 
-	config.LoadConfig()
+	config2.LoadConfig()
 	config.InitValidator()
 
-	// Connect to the database
+	// Connect to the db
 	config.ConnectDatabase()
 
 	// DB.AutoMigrate(&User{}, &Customer{}, &Invoice{}, &Revenue{})
@@ -96,7 +99,8 @@ func main() {
 					return c.Status(422).JSON(fiber.Map{"message": "Invalid fields.", "error": errs.Translate(trans)})
 				}
 
-				if errs, ok := err.(my_validator.MapValidationErrors); ok {
+				var errs my_validator.MapValidationErrors
+				if errors.As(err, &errs) {
 					trans, _ := config.Uni.GetTranslator(c.Get("Accept-Language"))
 					return c.Status(422).JSON(fiber.Map{"message": "Invalid fields.", "error": errs.Translate(trans)})
 				}
@@ -130,7 +134,7 @@ func main() {
 
 	router.RegisterRoutes(app)
 
-	log.Fatal(app.Listen(":" + config.Cfg.ServerPort))
+	log.Fatal(app.Listen(":" + config2.Cfg.ServerPort))
 }
 
 func SeedUsers() {

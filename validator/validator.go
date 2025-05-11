@@ -36,8 +36,8 @@ func (e MapValidationErrors) Translate(ut ut.Translator) map[string][]string {
 	}
 
 	for key, mapErrs := range e {
-		for _, err := range mapErrs {
-			if fieldErr, ok := err.(validator.FieldError); ok {
+		for _, mapErr := range mapErrs {
+			if fieldErr, ok := mapErr.(validator.FieldError); ok {
 				t, err := ut.T(fieldErr.Tag(), key, fieldErr.Param())
 				if err != nil {
 					log.Errorf("warning: error translating FieldError: %#v", fieldErr)

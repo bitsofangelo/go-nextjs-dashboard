@@ -1,12 +1,14 @@
 package handler
 
 import (
-	"go-nextjs-dashboard/config"
-	"go-nextjs-dashboard/model"
-	"sync"
+	"net/http"
 
 	"github.com/gofiber/fiber/v2"
+	"golang.org/x/sync/errgroup"
 	"gorm.io/gorm"
+
+	"go-nextjs-dashboard/config"
+	"go-nextjs-dashboard/model"
 )
 
 type OverviewHandler struct {
@@ -18,49 +20,40 @@ func NewOverviewHandler() *OverviewHandler {
 }
 
 func (h *OverviewHandler) GetOverviewData(c *fiber.Ctx) error {
+
+	ctx := c.UserContext()
+	g, ctx := errgroup.WithContext(ctx)
+
 	// time.Sleep(time.Second)
-	var invoiceCount int64
-	var customerCount int64
-	var invoiceStatus struct {
-		Paid    float64
-		Pending float64
-	}
-	var wg sync.WaitGroup
-	var err1, err2, err3 error
 
-	wg.Add(3)
+	var (
+		invoiceCount  int64
+		customerCount int64
+		invoiceStatus struct{ Paid, Pending float64 }
+	)
 
-	go func() {
-		defer wg.Done()
+	g.Go(func() error {
 		// time.Sleep(time.Millisecond * 300)
-		err1 = h.DB.Model(&model.Invoice{}).Count(&invoiceCount).Error
-	}()
+		return h.DB.WithContext(ctx).Model(&model.Invoice{}).Count(&invoiceCount).Error
+	})
 
-	go func() {
-		defer wg.Done()
+	g.Go(func() error {
 		// time.Sleep(time.Millisecond * 300)
-		err2 = h.DB.Model(&model.Customer{}).Count(&customerCount).Error
-	}()
+		return h.DB.WithContext(ctx).Model(&model.Customer{}).Count(&customerCount).Error
+	})
 
-	go func() {
-		defer wg.Done()
+	g.Go(func() error {
 		// time.Sleep(time.Millisecond * 300)
-		err3 = h.DB.Model(&model.Invoice{}).Select(`
+		return h.DB.WithContext(ctx).Model(&model.Invoice{}).Select(`
 			SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END) AS "paid",
 			SUM(CASE WHEN status = 'pending' THEN amount ELSE 0 END) AS "pending"
 		`).Scan(&invoiceStatus).Error
-	}()
+	})
 
-	wg.Wait()
-
-	if err1 != nil {
-		return err1
-	}
-	if err2 != nil {
-		return err2
-	}
-	if err3 != nil {
-		return err3
+	if err := g.Wait(); err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
 	}
 
 	return c.Status(200).JSON(fiber.Map{"data": fiber.Map{

@@ -1,8 +1,8 @@
 package model
 
 type Revenue struct {
-	Month   Month   `json:"month" gorm:"type:varchar(100);not null;unique"`
-	Revenue float32 `json:"revenue" gorm:"type:float;not null"`
+	Month   Month   `json:"month" gormstore:"type:varchar(100);not null;unique"`
+	Revenue float32 `json:"revenue" gormstore:"type:float;not null"`
 }
 
 type Month string

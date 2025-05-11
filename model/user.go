@@ -8,10 +8,10 @@ import (
 )
 
 type User struct {
-	ID       uuid.UUID `json:"id" gorm:"type:char(36);not null;unique;primary_key"`
-	Name     string    `json:"name" gorm:"type:varchar(255);not null"`
-	Email    string    `json:"email" gorm:"type:varchar(255);not null;unique"`
-	Password string    `json:"-" gorm:"type:text;not null"`
+	ID       uuid.UUID `json:"id" gormstore:"type:char(36);not null;unique;primary_key"`
+	Name     string    `json:"name" gormstore:"type:varchar(255);not null"`
+	Email    string    `json:"email" gormstore:"type:varchar(255);not null;unique"`
+	Password string    `json:"-" gormstore:"type:text;not null"`
 }
 
 func (user *User) BeforeCreate(tx *gorm.DB) (err error) {

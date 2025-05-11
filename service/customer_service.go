@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"go-nextjs-dashboard/config"
 	"go-nextjs-dashboard/model"
+	"go-nextjs-dashboard/utils"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -33,6 +34,16 @@ func (s *CustomerService) GetCustomers() ([]model.Customer, error) {
 	err := s.DB.Select("id, name").Order("name ASC").Find(&customers).Error
 
 	return customers, err
+}
+
+func (s *CustomerService) GetPaginatedCustomers(page int, size int) (*utils.PaginatedResult[model.Customer], error) {
+	paginate, err := utils.Paginate(s.DB, model.Customer{}, 1, 5)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &paginate, nil
 }
 
 func (s *CustomerService) GetFilteredCustomers(search string) ([]FilteredCustomerDTO, error) {

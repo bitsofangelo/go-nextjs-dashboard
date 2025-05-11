@@ -8,11 +8,11 @@ import (
 )
 
 type Invoice struct {
-	ID         uuid.UUID  `gorm:"type:char(36);not null;unique;primary_key"`
-	CustomerID *uuid.UUID `gorm:"type:char(36)"`
-	Amount     float32    `gorm:"type:float;not null"`
-	Status     string     `gorm:"type:varchar(255);not null"`
-	Date       time.Time  `gorm:"not null"`
+	ID         uuid.UUID  `gormstore:"type:char(36);not null;unique;primary_key"`
+	CustomerID *uuid.UUID `gormstore:"type:char(36)"`
+	Amount     float32    `gormstore:"type:float;not null"`
+	Status     string     `gormstore:"type:varchar(255);not null"`
+	Date       time.Time  `gormstore:"not null"`
 	Customer   *Customer
 }
 
