@@ -44,11 +44,11 @@ func Open(cfg *config.Config, log logger.Logger) (*gorm.DB, error) {
 		return nil, fmt.Errorf("cannot initialize db connection: %v", err)
 	}
 
-	// sqlDB, err := db.DB()
-	// if err != nil {
-	//	return nil, err
-	// }
-	// sqlDB.SetMaxOpenConns(cfg.MaxOpenConns)
+	sqlDB, err := db.DB()
+	if err != nil {
+		return nil, err
+	}
+	sqlDB.SetMaxOpenConns(10)
 	// sqlDB.SetMaxIdleConns(cfg.MaxIdleConns)
 	// sqlDB.SetConnMaxLifetime(cfg.ConnMaxLifetime)
 

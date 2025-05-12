@@ -12,6 +12,8 @@ import (
 	"go-nextjs-dashboard/internal/config"
 	customerstore "go-nextjs-dashboard/internal/customer/gormstore"
 	customersvc "go-nextjs-dashboard/internal/customer/service"
+	dashboardstore "go-nextjs-dashboard/internal/dashboard/gormstore"
+	dashboardservice "go-nextjs-dashboard/internal/dashboard/service"
 	database "go-nextjs-dashboard/internal/db"
 	sloglogger "go-nextjs-dashboard/internal/logger/slog"
 	"go-nextjs-dashboard/internal/server"
@@ -57,13 +59,15 @@ func main() {
 	custSvc := customersvc.New(custStore, logger.With("component", "service.customer"))
 	userStore := userstore.New(db, gormStoreLogger)
 	userSvc := userservice.New(userStore, logger.With("component", "service.user"))
+	dashStore := dashboardstore.New(db, gormStoreLogger)
+	dashSvc := dashboardservice.New(dashStore, logger.With("component", "service.dashboard"))
 
 	// handle signals for graceful shutdown
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
 	// build and run server
-	srv := server.New(ctx, cfg, logger.With("component", "http"), custSvc, userSvc)
+	srv := server.New(ctx, cfg, logger.With("component", "http"), custSvc, userSvc, dashSvc)
 	if err = srv.Run(); err != nil && !errors.Is(err, context.Canceled) {
 		logger.Error("failed to start server", "error", err)
 		os.Exit(1)

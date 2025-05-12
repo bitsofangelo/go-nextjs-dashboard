@@ -14,6 +14,8 @@ import (
 	"go-nextjs-dashboard/internal/config"
 	customerhttp "go-nextjs-dashboard/internal/customer/http"
 	customersvc "go-nextjs-dashboard/internal/customer/service"
+	dashboardhttp "go-nextjs-dashboard/internal/dashboard/http"
+	dashboardservice "go-nextjs-dashboard/internal/dashboard/service"
 	"go-nextjs-dashboard/internal/http"
 	"go-nextjs-dashboard/internal/logger"
 	userhttp "go-nextjs-dashboard/internal/user/http"
@@ -27,7 +29,14 @@ type Server struct {
 	logger logger.Logger
 }
 
-func New(ctx context.Context, cfg *config.Config, logger logger.Logger, custSvc *customersvc.Service, userSvc *userservice.Service) *Server {
+func New(
+	ctx context.Context,
+	cfg *config.Config,
+	logger logger.Logger,
+	custSvc *customersvc.Service,
+	userSvc *userservice.Service,
+	dashSvc *dashboardservice.Service,
+) *Server {
 	app := fiber.New(fiber.Config{
 		ErrorHandler: errHandler(logger),
 		ReadTimeout:  15 * time.Second,
@@ -47,6 +56,7 @@ func New(ctx context.Context, cfg *config.Config, logger logger.Logger, custSvc 
 	api := app.Group("/api")
 	customerhttp.RegisterHTTP(api, custSvc, logger)
 	userhttp.RegisterHTTP(api, userSvc, logger)
+	dashboardhttp.RegisterHTTP(api, dashSvc, logger)
 
 	return &Server{
 		app:    app,
