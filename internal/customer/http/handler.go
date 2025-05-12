@@ -16,8 +16,8 @@ import (
 
 var validator = http.Validator
 
-func RegisterHTTP(r fiber.Router, svc *service.Service, logger logger.Logger) {
-	h := newHandler(svc, logger)
+func RegisterHTTP(r fiber.Router, svc *service.Service, log logger.Logger) {
+	h := newHandler(svc, log)
 	r.Get("/customers", h.List)
 	r.Get("/customers/filtered", h.SearchWithInvoiceTotals)
 	r.Get("/customers/:id", h.Get)
@@ -29,10 +29,10 @@ type handler struct {
 	logger logger.Logger
 }
 
-func newHandler(svc *service.Service, logger logger.Logger) *handler {
+func newHandler(svc *service.Service, log logger.Logger) *handler {
 	return &handler{
 		svc:    svc,
-		logger: logger,
+		logger: log,
 	}
 }
 

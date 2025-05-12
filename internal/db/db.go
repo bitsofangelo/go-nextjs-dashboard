@@ -4,14 +4,25 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	gormlogger "gorm.io/gorm/logger"
 
 	"go-nextjs-dashboard/internal/config"
+	"go-nextjs-dashboard/internal/logger"
 )
 
-func Open(cfg *config.Config) (*gorm.DB, error) {
+func Open(cfg *config.Config, log logger.Logger) (*gorm.DB, error) {
+	wd, _ := os.Getwd()
+
+	logLevel := gormlogger.Warn
+	l := &dbLogger{Logger: log, level: logLevel, basePath: wd}
+
 	dns := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 		cfg.DBUser,
 		url.QueryEscape(cfg.DBPass),
@@ -20,7 +31,15 @@ func Open(cfg *config.Config) (*gorm.DB, error) {
 		cfg.DBName,
 	)
 
-	db, err := gorm.Open(mysql.Open(dns), &gorm.Config{})
+	db, err := gorm.Open(mysql.Open(dns), &gorm.Config{
+		Logger: gormlogger.New(l, gormlogger.Config{
+			SlowThreshold:             time.Second,
+			Colorful:                  false,
+			IgnoreRecordNotFoundError: true,
+			ParameterizedQueries:      true,
+			LogLevel:                  logLevel,
+		}),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("cannot initialize db connection: %v", err)
 	}
@@ -34,6 +53,28 @@ func Open(cfg *config.Config) (*gorm.DB, error) {
 	// sqlDB.SetConnMaxLifetime(cfg.ConnMaxLifetime)
 
 	return db, nil
+}
+
+type dbLogger struct {
+	logger.Logger
+	level    gormlogger.LogLevel
+	basePath string
+}
+
+func (l dbLogger) Printf(format string, v ...interface{}) {
+	msg := fmt.Sprintf(format, v...)
+
+	msg = strings.ReplaceAll(msg, "\n", " ")
+	msg = strings.ReplaceAll(msg, l.basePath+string(filepath.Separator), "")
+
+	switch l.level {
+	case gormlogger.Error:
+		l.Error(msg)
+	case gormlogger.Warn:
+		l.Warn(msg)
+	default:
+		l.Info(msg)
+	}
 }
 
 func RecordExists(tx *gorm.DB) (bool, error) {

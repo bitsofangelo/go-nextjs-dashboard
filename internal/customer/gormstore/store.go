@@ -60,10 +60,10 @@ type Store struct {
 // compile‑time check that we satisfy the port
 var _ customer.Store = (*Store)(nil)
 
-func New(db *gorm.DB, logger logger.Logger) *Store {
+func New(db *gorm.DB, log logger.Logger) *Store {
 	return &Store{
 		db:     db,
-		logger: logger,
+		logger: log,
 	}
 }
 

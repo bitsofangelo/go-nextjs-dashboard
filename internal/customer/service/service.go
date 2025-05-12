@@ -11,19 +11,19 @@ import (
 )
 
 type Service struct {
-	repo   customer.Store
+	store  customer.Store
 	logger logger.Logger
 }
 
-func New(repo customer.Store, logger logger.Logger) *Service {
+func New(store customer.Store, log logger.Logger) *Service {
 	return &Service{
-		repo:   repo,
-		logger: logger,
+		store:  store,
+		logger: log,
 	}
 }
 
 func (s *Service) List(ctx context.Context) ([]customer.Customer, error) {
-	customers, err := s.repo.List(ctx)
+	customers, err := s.store.List(ctx)
 
 	if err != nil {
 		return nil, fmt.Errorf("list customers: %w", err)
@@ -33,7 +33,7 @@ func (s *Service) List(ctx context.Context) ([]customer.Customer, error) {
 }
 
 func (s *Service) GetByID(ctx context.Context, id uuid.UUID) (*customer.Customer, error) {
-	c, err := s.repo.Find(ctx, id)
+	c, err := s.store.Find(ctx, id)
 
 	if err != nil {
 		return nil, fmt.Errorf("get customer by id: %w", err)
@@ -43,7 +43,7 @@ func (s *Service) GetByID(ctx context.Context, id uuid.UUID) (*customer.Customer
 }
 
 func (s *Service) Create(ctx context.Context, c customer.Customer) (*customer.Customer, error) {
-	exists, err := s.repo.ExistsByEmail(ctx, c.Email)
+	exists, err := s.store.ExistsByEmail(ctx, c.Email)
 	if err != nil {
 		return nil, fmt.Errorf("exists by email: %w", err)
 	}
@@ -55,14 +55,14 @@ func (s *Service) Create(ctx context.Context, c customer.Customer) (*customer.Cu
 
 	var cust *customer.Customer
 
-	if cust, err = s.repo.Save(ctx, c); err != nil {
+	if cust, err = s.store.Save(ctx, c); err != nil {
 		return nil, fmt.Errorf("save customer: %w", err)
 	}
 	return cust, nil
 }
 
 func (s *Service) SearchWithInvoiceTotals(ctx context.Context, search string) ([]customer.WithInvoiceTotals, error) {
-	result, err := s.repo.SearchWithInvoiceTotals(ctx, search)
+	result, err := s.store.SearchWithInvoiceTotals(ctx, search)
 	if err != nil {
 		return nil, fmt.Errorf("search with invoice totals: %w", err)
 	}

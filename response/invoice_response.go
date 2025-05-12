@@ -1,8 +1,9 @@
 package response
 
 import (
-	"go-nextjs-dashboard/model"
 	"time"
+
+	"go-nextjs-dashboard/model"
 
 	"github.com/google/uuid"
 )

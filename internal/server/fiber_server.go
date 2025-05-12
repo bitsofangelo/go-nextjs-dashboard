@@ -16,6 +16,8 @@ import (
 	customersvc "go-nextjs-dashboard/internal/customer/service"
 	"go-nextjs-dashboard/internal/http"
 	"go-nextjs-dashboard/internal/logger"
+	userhttp "go-nextjs-dashboard/internal/user/http"
+	userservice "go-nextjs-dashboard/internal/user/service"
 )
 
 type Server struct {
@@ -25,7 +27,7 @@ type Server struct {
 	logger logger.Logger
 }
 
-func New(ctx context.Context, cfg *config.Config, logger logger.Logger, custSvc *customersvc.Service) *Server {
+func New(ctx context.Context, cfg *config.Config, logger logger.Logger, custSvc *customersvc.Service, userSvc *userservice.Service) *Server {
 	app := fiber.New(fiber.Config{
 		ErrorHandler: errHandler(logger),
 		ReadTimeout:  15 * time.Second,
@@ -44,6 +46,7 @@ func New(ctx context.Context, cfg *config.Config, logger logger.Logger, custSvc 
 	// route registration
 	api := app.Group("/api")
 	customerhttp.RegisterHTTP(api, custSvc, logger)
+	userhttp.RegisterHTTP(api, userSvc, logger)
 
 	return &Server{
 		app:    app,
@@ -63,7 +66,7 @@ func (s *Server) Run() error {
 		}
 	}()
 
-	s.logger.Info(fmt.Sprintf("server is running at %s", s.cfg.AppPort))
+	// s.logger.Info(fmt.Sprintf("server is running at %s", s.cfg.AppPort))
 
 	select {
 	case err := <-srvErr:

@@ -15,6 +15,8 @@ import (
 	database "go-nextjs-dashboard/internal/db"
 	sloglogger "go-nextjs-dashboard/internal/logger/slog"
 	"go-nextjs-dashboard/internal/server"
+	userstore "go-nextjs-dashboard/internal/user/gormstore"
+	userservice "go-nextjs-dashboard/internal/user/service"
 )
 
 func main() {
@@ -43,22 +45,25 @@ func main() {
 	}()
 
 	// open db
-	db, err := database.Open(cfg)
+	db, err := database.Open(cfg, logger.With("component", "db"))
 	if err != nil {
 		logger.Error("failed to open database", "error", err)
 		os.Exit(1)
 	}
 
 	// wire dependencies
-	custStore := customerstore.New(db, logger.With("component", "store.gorm"))
+	gormStoreLogger := logger.With("component", "store.gorm")
+	custStore := customerstore.New(db, gormStoreLogger)
 	custSvc := customersvc.New(custStore, logger.With("component", "service.customer"))
+	userStore := userstore.New(db, gormStoreLogger)
+	userSvc := userservice.New(userStore, logger.With("component", "service.user"))
 
 	// handle signals for graceful shutdown
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
 	// build and run server
-	srv := server.New(ctx, cfg, logger.With("component", "http"), custSvc)
+	srv := server.New(ctx, cfg, logger.With("component", "http"), custSvc, userSvc)
 	if err = srv.Run(); err != nil && !errors.Is(err, context.Canceled) {
 		logger.Error("failed to start server", "error", err)
 		os.Exit(1)
