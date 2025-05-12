@@ -1,8 +1,8 @@
 package http
 
 import (
+	"context"
 	"errors"
-	"log/slog"
 	"net/http"
 
 	"github.com/go-playground/validator/v10"
@@ -15,19 +15,6 @@ func init() {
 	limiter.ConfigDefault.LimitReached = func(ctx fiber.Ctx) error {
 		return fiber.NewError(http.StatusTooManyRequests, "Too Many Requests")
 	}
-}
-
-type Response struct {
-	Data any `json:"data"`
-}
-
-type ErrResponse struct {
-	Message string `json:"message"`
-}
-
-type ValidationErrResponse struct {
-	Message string            `json:"message"`
-	Errors  map[string]string `json:"errors"`
 }
 
 // ValidationResponse maps the validation errors into a JSON response
@@ -61,6 +48,10 @@ func ValidationResponse() fiber.Handler {
 	}
 }
 
+type ctxKey string
+
+var reqIDKey ctxKey = "req_id"
+
 // RequestID extracts the request id from the request header or generates a new one
 func RequestID() fiber.Handler {
 	return func(c fiber.Ctx) error {
@@ -71,18 +62,11 @@ func RequestID() fiber.Handler {
 			id = uuid.NewString()
 		}
 
+		ctx := context.WithValue(c.Context(), reqIDKey, id)
+		c.SetContext(ctx)
+
 		c.Request().Header.Set(hdr, id)
 		c.Response().Header.Set(hdr, id)
-
-		return c.Next()
-	}
-}
-
-// RequestLogger makes logger with request context
-func RequestLogger(logger *slog.Logger) fiber.Handler {
-	return func(c fiber.Ctx) error {
-		log := logger.With("req_id", c.Get("X-Request-Id"), "path", c.Path())
-		c.Locals("log", log)
 
 		return c.Next()
 	}

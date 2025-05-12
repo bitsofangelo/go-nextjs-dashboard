@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"time"
 
 	"github.com/gofiber/fiber/v3"
@@ -16,18 +15,19 @@ import (
 	customerhttp "go-nextjs-dashboard/internal/customer/http"
 	customersvc "go-nextjs-dashboard/internal/customer/service"
 	"go-nextjs-dashboard/internal/http"
+	"go-nextjs-dashboard/internal/logger"
 )
 
 type Server struct {
 	app    *fiber.App
 	ctx    context.Context
 	cfg    *config.Config
-	logger *slog.Logger
+	logger logger.Logger
 }
 
-func New(ctx context.Context, cfg *config.Config, logger *slog.Logger, custSvc *customersvc.Service) *Server {
+func New(ctx context.Context, cfg *config.Config, logger logger.Logger, custSvc *customersvc.Service) *Server {
 	app := fiber.New(fiber.Config{
-		ErrorHandler: errHandler,
+		ErrorHandler: errHandler(logger),
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  60 * time.Second,
@@ -36,7 +36,6 @@ func New(ctx context.Context, cfg *config.Config, logger *slog.Logger, custSvc *
 	// global middlewares
 	// app.Use(logger.New())
 	app.Use(http.RequestID())
-	app.Use(http.RequestLogger(logger))
 	app.Use(cors.New(cors.Config{}))
 	app.Use(limiter.New(limiter.Config{Max: 10}))
 	app.Use(http.ValidationResponse())
@@ -44,9 +43,14 @@ func New(ctx context.Context, cfg *config.Config, logger *slog.Logger, custSvc *
 
 	// route registration
 	api := app.Group("/api")
-	customerhttp.RegisterHTTP(api, custSvc)
+	customerhttp.RegisterHTTP(api, custSvc, logger)
 
-	return &Server{app: app, ctx: ctx, cfg: cfg, logger: logger}
+	return &Server{
+		app:    app,
+		ctx:    ctx,
+		cfg:    cfg,
+		logger: logger,
+	}
 }
 
 func (s *Server) Run() error {
@@ -79,23 +83,25 @@ func (s *Server) Run() error {
 	}
 }
 
-func errHandler(c fiber.Ctx, err error) error {
-	code := fiber.StatusInternalServerError
-	message := "Internal Server Error"
+func errHandler(logger logger.Logger) fiber.ErrorHandler {
+	return func(c fiber.Ctx, err error) error {
+		code := fiber.StatusInternalServerError
+		message := "Internal Server Error"
 
-	var fe *fiber.Error
-	if errors.As(err, &fe) {
-		if fe.Code != code {
-			code = fe.Code
-			message = fe.Message
+		var fe *fiber.Error
+		if errors.As(err, &fe) {
+			if fe.Code != code {
+				code = fe.Code
+				message = fe.Message
+			}
 		}
-	}
 
-	if code >= fiber.StatusInternalServerError {
-		http.Logger(c).ErrorContext(c.Context(), err.Error())
-	}
+		if code >= fiber.StatusInternalServerError {
+			logger.ErrorContext(c.Context(), err.Error())
+		}
 
-	return c.Status(code).JSON(http.ErrResponse{
-		Message: message,
-	})
+		return c.Status(code).JSON(http.ErrResponse{
+			Message: message,
+		})
+	}
 }

@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log/slog"
 	"time"
 
 	"github.com/google/uuid"
@@ -13,6 +12,7 @@ import (
 
 	"go-nextjs-dashboard/internal/customer"
 	"go-nextjs-dashboard/internal/db"
+	"go-nextjs-dashboard/internal/logger"
 )
 
 type customerModel struct {
@@ -54,13 +54,13 @@ func toEntity(c customerModel) customer.Customer {
 
 type Store struct {
 	db     *gorm.DB
-	logger *slog.Logger
+	logger logger.Logger
 }
 
 // compile‑time check that we satisfy the port
 var _ customer.Store = (*Store)(nil)
 
-func New(db *gorm.DB, logger *slog.Logger) *Store {
+func New(db *gorm.DB, logger logger.Logger) *Store {
 	return &Store{
 		db:     db,
 		logger: logger,
@@ -149,6 +149,8 @@ func (s *Store) SearchWithInvoiceTotals(ctx context.Context, search string) ([]c
 	if err != nil {
 		return nil, fmt.Errorf("invoice totals query: %w", err)
 	}
-	s.logger.Debug("fetch customer with invoice", "elapsed", time.Since(start).String())
+
+	s.logger.DebugContext(ctx, "fetch customer with invoice", "elapsed", time.Since(start).String())
+
 	return out, nil
 }

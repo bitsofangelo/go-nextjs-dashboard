@@ -3,19 +3,19 @@ package service
 import (
 	"context"
 	"fmt"
-	"log/slog"
 
 	"github.com/google/uuid"
 
 	"go-nextjs-dashboard/internal/customer"
+	"go-nextjs-dashboard/internal/logger"
 )
 
 type Service struct {
 	repo   customer.Store
-	logger *slog.Logger
+	logger logger.Logger
 }
 
-func New(repo customer.Store, logger *slog.Logger) *Service {
+func New(repo customer.Store, logger logger.Logger) *Service {
 	return &Service{
 		repo:   repo,
 		logger: logger,
@@ -49,7 +49,7 @@ func (s *Service) Create(ctx context.Context, c customer.Customer) (*customer.Cu
 	}
 
 	if exists {
-		s.logger.WarnContext(ctx, "email already taken", slog.String("email", c.Email))
+		s.logger.WarnContext(ctx, "email already taken", "email", c.Email)
 		return nil, customer.ErrEmailAlreadyTaken
 	}
 

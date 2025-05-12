@@ -10,7 +10,8 @@ import (
 )
 
 type Config struct {
-	AppPort string `mapstructure:"APP_PORT"`
+	AppPort     string `mapstructure:"APP_PORT"`
+	AppTimezone string `mapstructure:"APP_TIMEZONE"`
 
 	DBHost string `mapstructure:"DB_HOST"`
 	DBPort int    `mapstructure:"DB_PORT"`
@@ -20,6 +21,8 @@ type Config struct {
 
 	LogLevel  string `mapstructure:"LOG_LEVEL"`  // "debug" | "info" | "warn" | "error"
 	LogFormat string `mapstructure:"LOG_FORMAT"` // "text" | "json"
+	LogPath   string `mapstructure:"LOG_PATH"`
+	LogOutput string `mapstructure:"LOG_OUTPUT"` // "stdout" (default) | "./logs/app.log" | "/var/log/<app_name>/app.log
 
 	// Deprecated TODO: to be removed
 	DatabaseURL string `mapstructure:"MYSQL_URI"`
