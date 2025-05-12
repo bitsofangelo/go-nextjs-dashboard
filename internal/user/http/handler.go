@@ -30,7 +30,7 @@ func newHandler(svc *service.Service, log logger.Logger) *handler {
 }
 
 func (h *handler) GetByEmail(c fiber.Ctx) error {
-	email := c.Path("email")
+	email := c.Params("email")
 
 	u, err := h.svc.GetByEmail(c.Context(), email)
 	if err != nil {
