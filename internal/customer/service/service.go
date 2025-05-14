@@ -7,18 +7,22 @@ import (
 	"github.com/google/uuid"
 
 	"go-nextjs-dashboard/internal/customer"
+	customerevent "go-nextjs-dashboard/internal/customer/event"
+	"go-nextjs-dashboard/internal/event"
 	"go-nextjs-dashboard/internal/logger"
 )
 
 type Service struct {
-	store  customer.Store
-	logger logger.Logger
+	store     customer.Store
+	publisher event.Publisher
+	logger    logger.Logger
 }
 
-func New(store customer.Store, log logger.Logger) *Service {
+func New(store customer.Store, pub event.Publisher, log logger.Logger) *Service {
 	return &Service{
-		store:  store,
-		logger: log,
+		store:     store,
+		publisher: pub,
+		logger:    log,
 	}
 }
 
@@ -58,6 +62,11 @@ func (s *Service) Create(ctx context.Context, c customer.Customer) (*customer.Cu
 	if cust, err = s.store.Save(ctx, c); err != nil {
 		return nil, fmt.Errorf("save customer: %w", err)
 	}
+
+	if err = s.publisher.Publish(ctx, customerevent.Created{ID: cust.ID}); err != nil {
+		return nil, fmt.Errorf("publish event: %w", err)
+	}
+
 	return cust, nil
 }
 

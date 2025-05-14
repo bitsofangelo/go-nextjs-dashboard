@@ -50,7 +50,7 @@ func (s *CustomerService) GetPaginatedCustomers(page int, size int) (*utils.Pagi
 func (s *CustomerService) GetFilteredCustomers(search string) ([]FilteredCustomerDTO, error) {
 	// type filteredCustomer struct {
 	// 	ID            uuid.UUID `json:"id"`
-	// 	Name          string    `json:"name"`
+	// 	Key          string    `json:"name"`
 	// 	Email         string    `json:"email"`
 	// 	ImageURL      string    `json:"image_url"`
 	// 	TotalInvoices uint32    `json:"total_invoices"`

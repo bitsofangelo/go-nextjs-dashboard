@@ -57,7 +57,7 @@ type Store struct {
 	logger logger.Logger
 }
 
-// compile‑time check that we satisfy the port
+// compile‑time check
 var _ customer.Store = (*Store)(nil)
 
 func New(db *gorm.DB, log logger.Logger) *Store {

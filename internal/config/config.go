@@ -29,23 +29,6 @@ type Config struct {
 	ServerPort  string `mapstructure:"SERVER_PORT"`
 }
 
-// Cfg Deprecated
-// TODO: to be removed
-var Cfg Config
-
-// LoadConfig Deprecated
-// TODO: to be removed
-func LoadConfig() {
-	if err := godotenv.Load(".env"); err != nil {
-		log.Fatal(fmt.Errorf("error loading .env file: %w", err))
-	}
-
-	Cfg = Config{
-		DatabaseURL: os.Getenv("MYSQL_URI"),
-		ServerPort:  os.Getenv("SERVER_PORT"),
-	}
-}
-
 func Load() (*Config, error) {
 	viper.SetConfigFile(".env")
 	viper.SetConfigType("env")
@@ -63,4 +46,21 @@ func Load() (*Config, error) {
 	}
 
 	return &cfg, nil
+}
+
+// Cfg Deprecated
+// TODO: to be removed
+var Cfg Config
+
+// LoadConfig Deprecated
+// TODO: to be removed
+func LoadConfig() {
+	if err := godotenv.Load(".env"); err != nil {
+		log.Fatal(fmt.Errorf("error loading .env file: %w", err))
+	}
+
+	Cfg = Config{
+		DatabaseURL: os.Getenv("MYSQL_URI"),
+		ServerPort:  os.Getenv("SERVER_PORT"),
+	}
 }

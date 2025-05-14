@@ -3,7 +3,6 @@ package http
 import (
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
@@ -37,7 +36,6 @@ func newHandler(svc *service.Service, log logger.Logger) *handler {
 }
 
 func (h *handler) List(c fiber.Ctx) error {
-	time.Sleep(5 * time.Second)
 	cust, err := h.svc.List(c.Context())
 	if err != nil {
 		switch {
@@ -75,8 +73,6 @@ func (h *handler) Get(c fiber.Ctx) error {
 }
 
 func (h *handler) Create(c fiber.Ctx) error {
-	// log := http.Logger(c)
-
 	var req createRequest
 
 	if err := c.Bind().Body(&req); err != nil {

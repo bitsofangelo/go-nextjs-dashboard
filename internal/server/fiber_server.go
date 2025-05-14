@@ -11,85 +11,75 @@ import (
 	"github.com/gofiber/fiber/v3/middleware/limiter"
 	"github.com/gofiber/fiber/v3/middleware/recover"
 
-	"go-nextjs-dashboard/internal/config"
+	"go-nextjs-dashboard/internal/bootstrap"
 	customerhttp "go-nextjs-dashboard/internal/customer/http"
-	customersvc "go-nextjs-dashboard/internal/customer/service"
 	dashboardhttp "go-nextjs-dashboard/internal/dashboard/http"
-	dashboardservice "go-nextjs-dashboard/internal/dashboard/service"
 	"go-nextjs-dashboard/internal/http"
 	"go-nextjs-dashboard/internal/logger"
 	userhttp "go-nextjs-dashboard/internal/user/http"
-	userservice "go-nextjs-dashboard/internal/user/service"
 )
 
 type Server struct {
-	app    *fiber.App
+	app    *bootstrap.App
+	router *fiber.App
 	ctx    context.Context
-	cfg    *config.Config
-	logger logger.Logger
 }
 
 func New(
 	ctx context.Context,
-	cfg *config.Config,
-	logger logger.Logger,
-	custSvc *customersvc.Service,
-	userSvc *userservice.Service,
-	dashSvc *dashboardservice.Service,
+	app *bootstrap.App,
 ) *Server {
-	app := fiber.New(fiber.Config{
-		ErrorHandler: errHandler(logger),
+	router := fiber.New(fiber.Config{
+		ErrorHandler: errHandler(app.Logger.With("component", "http")),
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  60 * time.Second,
 	})
 
 	// global middlewares
-	// app.Use(logger.New())
-	app.Use(http.RequestID())
-	app.Use(cors.New(cors.Config{}))
-	app.Use(limiter.New(limiter.Config{Max: 10}))
-	app.Use(http.ValidationResponse())
-	app.Use(recover.New(recover.Config{}))
+	// router.Use(logger.New())
+	router.Use(http.RequestID())
+	router.Use(cors.New(cors.Config{}))
+	router.Use(limiter.New(limiter.Config{Max: 10}))
+	router.Use(http.ValidationResponse())
+	router.Use(recover.New(recover.Config{}))
 
-	// route registration
-	api := app.Group("/api")
-	customerhttp.RegisterHTTP(api, custSvc, logger)
-	userhttp.RegisterHTTP(api, userSvc, logger)
-	dashboardhttp.RegisterHTTP(api, dashSvc, logger)
+	// routes registration
+	api := router.Group("/api")
+	customerhttp.RegisterHTTP(api, app.CustSvc, app.Logger.With("component", "http.customer"))
+	userhttp.RegisterHTTP(api, app.UserSvc, app.Logger.With("component", "http.user"))
+	dashboardhttp.RegisterHTTP(api, app.DashSvc, app.Logger.With("component", "http.dashboard"))
 
 	return &Server{
 		app:    app,
+		router: router,
 		ctx:    ctx,
-		cfg:    cfg,
-		logger: logger,
 	}
 }
 
 func (s *Server) Run() error {
+	serverLogger := s.app.Logger.With("component", "server")
 	srvErr := make(chan error)
 
 	// run fiber in goroutine
 	go func() {
-		if err := s.app.Listen(":" + s.cfg.AppPort); err != nil {
+		if err := s.router.Listen(":" + s.app.Config.AppPort); err != nil {
 			srvErr <- fmt.Errorf("start server: %w", err)
 		}
 	}()
-
-	// s.logger.Info(fmt.Sprintf("server is running at %s", s.cfg.AppPort))
 
 	select {
 	case err := <-srvErr:
 		return err
 	case <-s.ctx.Done(): // block until shutdown signal is received
-		s.logger.Info("shutdown signal received")
+		serverLogger.Info("shutdown signal received")
 
 		// give other goroutines time to finish (DB, jobs, etc.)
 		shutCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
 
 		// graceful shutdown
-		if err := s.app.ShutdownWithContext(shutCtx); err != nil {
+		if err := s.router.ShutdownWithContext(shutCtx); err != nil {
 			return fmt.Errorf("graceful shutdown failed, forcing close: %w", err)
 		}
 		return nil
