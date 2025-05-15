@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"reflect"
 )
 
 type Mode int
@@ -21,20 +22,23 @@ type Publisher interface {
 	Publish(ctx context.Context, evt Event) error
 }
 
+type Handler[T Event] func(context.Context, T) error
+
 type Broker struct {
-	buses map[string]Publisher
+	buses map[reflect.Type]Publisher
 }
 
-func NewBroker(buses map[string]Publisher) *Broker {
+func NewBroker(buses map[reflect.Type]Publisher) *Broker {
 	return &Broker{
 		buses: buses,
 	}
 }
 
 func (r *Broker) Publish(ctx context.Context, evt Event) error {
-	bus, ok := r.buses[evt.Key()]
+	t := reflect.TypeOf(evt)
+	bus, ok := r.buses[t]
 	if !ok {
-		return errors.New(fmt.Sprintf("eventBus [%s] not registered", evt.Key()))
+		return errors.New(fmt.Sprintf("eventBus [%s] not registered", t.String()))
 	}
 
 	return bus.Publish(ctx, evt)

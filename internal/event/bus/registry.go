@@ -1,17 +1,20 @@
 package bus
 
 import (
+	"reflect"
+
 	customerevent "go-nextjs-dashboard/internal/customer/event"
 	"go-nextjs-dashboard/internal/event"
 )
 
-func RegisterAll() map[string]event.Publisher {
-	buses := make(map[string]event.Publisher)
+func RegisterAll() map[reflect.Type]event.Publisher {
+	buses := make(map[reflect.Type]event.Publisher)
 
-	custBus := newBus[customerevent.Created]()
+	custCreatedBus := newBus[customerevent.Created]()
+	custCreatedT := reflect.TypeOf(customerevent.Created{})
 	{
-		custBus.Subscribe(customerevent.SendWelcomeMessage)
-		buses[custBus.Name()] = custBus
+		custCreatedBus.Subscribe(customerevent.SendWelcomeMessage)
+		buses[custCreatedT] = custCreatedBus
 	}
 
 	return buses

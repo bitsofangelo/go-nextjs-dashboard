@@ -8,21 +8,24 @@ import (
 
 	"go-nextjs-dashboard/internal/customer"
 	customerevent "go-nextjs-dashboard/internal/customer/event"
+	"go-nextjs-dashboard/internal/db"
 	"go-nextjs-dashboard/internal/event"
 	"go-nextjs-dashboard/internal/logger"
 )
 
 type Service struct {
-	store     customer.Store
-	publisher event.Publisher
-	logger    logger.Logger
+	store  customer.Store
+	txm    db.GormTxManager
+	event  event.Publisher
+	logger logger.Logger
 }
 
-func New(store customer.Store, pub event.Publisher, log logger.Logger) *Service {
+func New(store customer.Store, txm db.GormTxManager, evt event.Publisher, log logger.Logger) *Service {
 	return &Service{
-		store:     store,
-		publisher: pub,
-		logger:    log,
+		store:  store,
+		txm:    txm,
+		event:  evt,
+		logger: log,
 	}
 }
 
@@ -59,11 +62,18 @@ func (s *Service) Create(ctx context.Context, c customer.Customer) (*customer.Cu
 
 	var cust *customer.Customer
 
-	if cust, err = s.store.Save(ctx, c); err != nil {
-		return nil, fmt.Errorf("save customer: %w", err)
+	err = s.txm.Do(ctx, func(txCtx context.Context) error {
+		if cust, err = s.store.Save(txCtx, c); err != nil {
+			return fmt.Errorf("save customer: %w", err)
+		}
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
 	}
 
-	if err = s.publisher.Publish(ctx, customerevent.Created{ID: cust.ID}); err != nil {
+	if err = s.event.Publish(ctx, customerevent.Created{ID: cust.ID}); err != nil {
 		return nil, fmt.Errorf("publish event: %w", err)
 	}
 

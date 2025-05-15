@@ -11,17 +11,9 @@ import (
 
 var ErrNoHandlers = errors.New("no handlers registered")
 
-type Bus[T event.Event] interface {
-	event.Publisher
-	Subscribe(fn Handler[T])
-	Name() string
-}
-
-type Handler[T event.Event] func(context.Context, T) error
-
 type eventBus[T event.Event] struct {
 	mu       sync.RWMutex
-	handlers []Handler[T]
+	handlers []event.Handler[T]
 	evt      T
 }
 
@@ -29,7 +21,7 @@ func newBus[T event.Event]() *eventBus[T] {
 	return &eventBus[T]{}
 }
 
-func (b *eventBus[T]) Subscribe(fn Handler[T]) {
+func (b *eventBus[T]) Subscribe(fn event.Handler[T]) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	b.handlers = append(b.handlers, fn)
@@ -37,11 +29,11 @@ func (b *eventBus[T]) Subscribe(fn Handler[T]) {
 
 func (b *eventBus[T]) Publish(ctx context.Context, evt event.Event) error {
 	b.mu.RLock()
-	handlers := append([]Handler[T]{}, b.handlers...)
+	handlers := append([]event.Handler[T]{}, b.handlers...)
 	b.mu.RUnlock()
 
 	if len(handlers) == 0 {
-		return ErrNoHandlers
+		return nil
 	}
 
 	e, ok := evt.(T)

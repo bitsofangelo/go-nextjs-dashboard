@@ -53,6 +53,7 @@ func New() (*App, error) {
 		logger.Error("failed to open database", "error", err)
 		os.Exit(1)
 	}
+	txm := database.NewTxManager(db)
 
 	// init events and handlers
 	buses := eventbus.RegisterAll()
@@ -61,7 +62,7 @@ func New() (*App, error) {
 	// wire dependencies
 	gormStoreLogger := logger.With("component", "store.gorm")
 	custStore := customerstore.New(db, gormStoreLogger)
-	custSvc := customersvc.New(custStore, eventBroker, logger.With("component", "service.customer"))
+	custSvc := customersvc.New(custStore, txm, eventBroker, logger.With("component", "service.customer"))
 	userStore := userstore.New(db, gormStoreLogger)
 	userSvc := usersvc.New(userStore, logger.With("component", "service.user"))
 	dashStore := dashboardstore.New(db, gormStoreLogger)
@@ -79,7 +80,7 @@ func New() (*App, error) {
 func (app *App) Close() error {
 	if err := app.Logger.Close(); err != nil {
 		app.Logger.Error("failed to close logger", "error", err)
-		return err
+		return fmt.Errorf("failed to close logger: %w", err)
 	}
 	return nil
 }

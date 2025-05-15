@@ -67,10 +67,18 @@ func New(db *gorm.DB, log logger.Logger) *Store {
 	}
 }
 
+func (s *Store) DB(ctx context.Context) *gorm.DB {
+	if gormDB, ok := db.FromCtx(ctx); ok {
+		return gormDB.WithContext(ctx)
+	}
+
+	return s.db.WithContext(ctx)
+}
+
 func (s *Store) List(ctx context.Context) ([]customer.Customer, error) {
 	var models []customerModel
 
-	if err := s.db.WithContext(ctx).Find(&models).Error; err != nil {
+	if err := s.DB(ctx).Find(&models).Error; err != nil {
 		return nil, fmt.Errorf("query customers: %w", err)
 	}
 
@@ -86,7 +94,7 @@ func (s *Store) List(ctx context.Context) ([]customer.Customer, error) {
 func (s *Store) Find(ctx context.Context, u uuid.UUID) (*customer.Customer, error) {
 	var model customerModel
 
-	if err := s.db.WithContext(ctx).First(&model, "id = ?", u).Error; err != nil {
+	if err := s.DB(ctx).First(&model, "id = ?", u).Error; err != nil {
 		switch {
 		case errors.Is(err, gorm.ErrRecordNotFound):
 			return nil, customer.ErrCustomerNotFound
@@ -100,7 +108,7 @@ func (s *Store) Find(ctx context.Context, u uuid.UUID) (*customer.Customer, erro
 }
 
 func (s *Store) ExistsByEmail(ctx context.Context, email string) (bool, error) {
-	tx := s.db.WithContext(ctx).
+	tx := s.DB(ctx).
 		Model(&customerModel{}).
 		Where("email = ?", email)
 
@@ -115,7 +123,7 @@ func (s *Store) ExistsByEmail(ctx context.Context, email string) (bool, error) {
 func (s *Store) Save(ctx context.Context, c customer.Customer) (*customer.Customer, error) {
 	model := toModel(c)
 
-	if err := s.db.WithContext(ctx).Create(&model).Error; err != nil {
+	if err := s.DB(ctx).Create(&model).Error; err != nil {
 		return nil, fmt.Errorf("store customer: %w", err)
 	}
 
@@ -129,7 +137,7 @@ func (s *Store) SearchWithInvoiceTotals(ctx context.Context, search string) ([]c
 
 	start := time.Now()
 
-	err := s.db.WithContext(ctx).
+	err := s.DB(ctx).
 		Model(&customerModel{}).
 		Select(`
             customers.id,

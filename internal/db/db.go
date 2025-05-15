@@ -1,7 +1,7 @@
 package db
 
 import (
-	"errors"
+	"context"
 	"fmt"
 	"net/url"
 	"os"
@@ -55,6 +55,28 @@ func Open(cfg *config.Config, log logger.Logger) (*gorm.DB, error) {
 	return db, nil
 }
 
+type TxManager interface {
+	Do(context.Context, func(context.Context) error) error
+}
+
+var dbTxKey = "db_tx_key"
+
+type GormTxManager struct {
+	db *gorm.DB
+}
+
+func NewTxManager(db *gorm.DB) GormTxManager {
+	return GormTxManager{db: db}
+}
+
+func (g *GormTxManager) Do(ctx context.Context, fn func(context.Context) error) error {
+	return g.db.WithContext(ctx).
+		Transaction(func(tx *gorm.DB) error {
+			ctx = context.WithValue(ctx, dbTxKey, tx)
+			return fn(ctx)
+		})
+}
+
 type dbLogger struct {
 	logger.Logger
 	level    gormlogger.LogLevel
@@ -75,17 +97,4 @@ func (l dbLogger) Printf(format string, v ...interface{}) {
 	default:
 		l.Info(msg)
 	}
-}
-
-func RecordExists(tx *gorm.DB) (bool, error) {
-	var hit int
-
-	if err := tx.Select("1").Limit(1).Scan(&hit).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return false, nil
-		}
-		return false, fmt.Errorf("record exists: %w", err)
-	}
-
-	return hit == 1, nil
 }
