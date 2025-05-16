@@ -1,4 +1,4 @@
-package gormstore
+package user
 
 import (
 	"context"
@@ -8,30 +8,29 @@ import (
 	"gorm.io/gorm"
 
 	"go-nextjs-dashboard/internal/logger"
-	"go-nextjs-dashboard/internal/user"
 )
 
-type Store struct {
+type GormStore struct {
 	db     *gorm.DB
 	logger logger.Logger
 }
 
-var _ user.Store = (*Store)(nil)
+var _ Store = (*GormStore)(nil)
 
-func New(db *gorm.DB, log logger.Logger) *Store {
-	return &Store{
+func NewStore(db *gorm.DB, log logger.Logger) *GormStore {
+	return &GormStore{
 		db:     db,
-		logger: log,
+		logger: log.With("component", "store.gorm.user"),
 	}
 }
 
-func (s Store) FindByEmail(ctx context.Context, email string) (*user.User, error) {
-	var u user.User
+func (s GormStore) FindByEmail(ctx context.Context, email string) (*User, error) {
+	var u User
 
 	if err := s.db.First(&u, "email = ?", email).Error; err != nil {
 		switch {
 		case errors.Is(err, gorm.ErrRecordNotFound):
-			return nil, user.ErrUserNotFound
+			return nil, ErrUserNotFound
 		default:
 			return nil, fmt.Errorf("query by email: %w", err)
 		}

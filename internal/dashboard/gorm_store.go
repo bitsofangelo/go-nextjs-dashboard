@@ -1,4 +1,4 @@
-package gormstore
+package dashboard
 
 import (
 	"context"
@@ -9,30 +9,29 @@ import (
 	"gorm.io/gorm"
 
 	"go-nextjs-dashboard/internal/customer"
-	"go-nextjs-dashboard/internal/dashboard"
 	"go-nextjs-dashboard/internal/invoice"
 	"go-nextjs-dashboard/internal/logger"
 )
 
-type Store struct {
+type GormStore struct {
 	db     *gorm.DB
 	logger logger.Logger
 }
 
-var _ dashboard.Store = (*Store)(nil)
+var _ Store = (*GormStore)(nil)
 
-func New(db *gorm.DB, logger logger.Logger) *Store {
-	return &Store{
+func NewStore(db *gorm.DB, logger logger.Logger) *GormStore {
+	return &GormStore{
 		db:     db,
-		logger: logger,
+		logger: logger.With("component", "store.gorm.dash"),
 	}
 }
 
-func (s Store) GetOverview(ctx context.Context) (*dashboard.Overview, error) {
+func (s GormStore) GetOverview(ctx context.Context) (*Overview, error) {
 	var (
 		invoiceCount  int64
 		customerCount int64
-		invoiceStatus dashboard.InvoiceStatus
+		invoiceStatus InvoiceStatus
 	)
 
 	g, egCtx := errgroup.WithContext(ctx)
@@ -71,7 +70,7 @@ func (s Store) GetOverview(ctx context.Context) (*dashboard.Overview, error) {
 
 	s.logger.DebugContext(ctx, "fetch overview", "elapsed", time.Since(start).String())
 
-	return &dashboard.Overview{
+	return &Overview{
 		InvoiceCount:  invoiceCount,
 		CustomerCount: customerCount,
 		InvoiceStatus: invoiceStatus,

@@ -71,3 +71,20 @@ func RequestID() fiber.Handler {
 		return c.Next()
 	}
 }
+
+func rateLimiter(max ...int) fiber.Handler {
+	var m int
+	if len(max) > 0 {
+		m = max[0]
+	}
+
+	return limiter.New(limiter.Config{Max: m})
+}
+
+func loggerKeyMiddleware(key string) fiber.Handler {
+	return func(c fiber.Ctx) error {
+		ctx := context.WithValue(c.Context(), "logger_key", key)
+		c.SetContext(ctx)
+		return c.Next()
+	}
+}

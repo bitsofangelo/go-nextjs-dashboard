@@ -14,9 +14,7 @@ const (
 	ModeAsync
 )
 
-type Event interface {
-	Key() string
-}
+type Event interface{}
 
 type Publisher interface {
 	Publish(ctx context.Context, evt Event) error

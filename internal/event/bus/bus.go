@@ -2,14 +2,11 @@ package bus
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"sync"
 
 	"go-nextjs-dashboard/internal/event"
 )
-
-var ErrNoHandlers = errors.New("no handlers registered")
 
 type eventBus[T event.Event] struct {
 	mu       sync.RWMutex
@@ -52,8 +49,4 @@ func (b *eventBus[T]) Publish(ctx context.Context, evt event.Event) error {
 		return errs[0]
 	}
 	return nil
-}
-
-func (b *eventBus[T]) Name() string {
-	return b.evt.Key()
 }

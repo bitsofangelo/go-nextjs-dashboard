@@ -1,7 +1,15 @@
 package invoice
 
-import "context"
+import (
+	"context"
+	"errors"
+
+	"github.com/google/uuid"
+)
+
+var ErrInvoiceNotFound = errors.New("invoice not found")
 
 type Store interface {
-	FindLatestInvoices(ctx context.Context, limit int) ([]Invoice, error)
+	Find(context.Context, uuid.UUID) (*Invoice, error)
+	Save(context.Context, Invoice) (*Invoice, error)
 }

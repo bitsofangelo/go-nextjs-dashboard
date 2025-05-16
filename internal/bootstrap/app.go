@@ -5,26 +5,30 @@ import (
 	"os"
 	"time"
 
+	"go-nextjs-dashboard/internal/app"
 	"go-nextjs-dashboard/internal/config"
-	customerstore "go-nextjs-dashboard/internal/customer/gormstore"
-	customersvc "go-nextjs-dashboard/internal/customer/service"
-	dashboardstore "go-nextjs-dashboard/internal/dashboard/gormstore"
-	dashboardsvc "go-nextjs-dashboard/internal/dashboard/service"
+	"go-nextjs-dashboard/internal/customer"
+	"go-nextjs-dashboard/internal/dashboard"
 	database "go-nextjs-dashboard/internal/db"
 	"go-nextjs-dashboard/internal/event"
-	eventbus "go-nextjs-dashboard/internal/event/bus"
+	"go-nextjs-dashboard/internal/event/bus"
+	"go-nextjs-dashboard/internal/invoice"
 	sloglogger "go-nextjs-dashboard/internal/logger/slog"
-	userstore "go-nextjs-dashboard/internal/user/gormstore"
-	usersvc "go-nextjs-dashboard/internal/user/service"
+	"go-nextjs-dashboard/internal/user"
 )
 
 type App struct {
 	Config *config.Config
 	Logger *sloglogger.Logger
 
-	CustSvc *customersvc.Service
-	UserSvc *usersvc.Service
-	DashSvc *dashboardsvc.Service
+	// services
+	CustSvc *customer.Service
+	UserSvc *user.Service
+	DashSvc *dashboard.Service
+	InvSvc  *invoice.Service
+
+	// use cases
+	CreateInvoice *app.CreateInvoice
 }
 
 func New() (*App, error) {
@@ -56,17 +60,21 @@ func New() (*App, error) {
 	txm := database.NewTxManager(db)
 
 	// init events and handlers
-	buses := eventbus.RegisterAll()
+	buses := bus.RegisterAll()
 	eventBroker := event.NewBroker(buses)
 
 	// wire dependencies
-	gormStoreLogger := logger.With("component", "store.gorm")
-	custStore := customerstore.New(db, gormStoreLogger)
-	custSvc := customersvc.New(custStore, txm, eventBroker, logger.With("component", "service.customer"))
-	userStore := userstore.New(db, gormStoreLogger)
-	userSvc := usersvc.New(userStore, logger.With("component", "service.user"))
-	dashStore := dashboardstore.New(db, gormStoreLogger)
-	dashSvc := dashboardsvc.New(dashStore, logger.With("component", "service.dashboard"))
+	custStore := customer.NewStore(db, logger)
+	custSvc := customer.NewService(custStore, txm, eventBroker, logger)
+	userStore := user.NewStore(db, logger)
+	userSvc := user.NewService(userStore, logger)
+	dashStore := dashboard.NewStore(db, logger)
+	dashSvc := dashboard.NewService(dashStore, logger)
+	invStore := invoice.NewStore(db, logger)
+	invSvc := invoice.NewService(invStore, logger)
+
+	// use cases
+	createInvoice := app.NewCreateInvoice(custStore, invStore, txm, logger)
 
 	return &App{
 		Config:  cfg,
@@ -74,6 +82,9 @@ func New() (*App, error) {
 		CustSvc: custSvc,
 		UserSvc: userSvc,
 		DashSvc: dashSvc,
+		InvSvc:  invSvc,
+
+		CreateInvoice: createInvoice,
 	}, nil
 }
 

@@ -5,31 +5,25 @@ import (
 	"fmt"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/google/uuid"
 
-	"go-nextjs-dashboard/internal/http"
 	"go-nextjs-dashboard/internal/logger"
 	"go-nextjs-dashboard/internal/user"
-	"go-nextjs-dashboard/internal/user/service"
 )
 
-func RegisterHTTP(r fiber.Router, svc *service.Service, log logger.Logger) {
-	h := newHandler(svc, log)
-	r.Get("/users/email/:email", h.GetByEmail)
-}
-
-type handler struct {
-	svc    *service.Service
+type userHandler struct {
+	svc    *user.Service
 	logger logger.Logger
 }
 
-func newHandler(svc *service.Service, log logger.Logger) *handler {
-	return &handler{
+func newUserHandler(svc *user.Service, log logger.Logger) *userHandler {
+	return &userHandler{
 		svc:    svc,
-		logger: log,
+		logger: log.With("component", "http.user"),
 	}
 }
 
-func (h *handler) GetByEmail(c fiber.Ctx) error {
+func (h *userHandler) GetByEmail(c fiber.Ctx) error {
 	email := c.Params("email")
 
 	u, err := h.svc.GetByEmail(c.Context(), email)
@@ -42,7 +36,17 @@ func (h *handler) GetByEmail(c fiber.Ctx) error {
 		}
 	}
 
-	return c.JSON(http.Response{
-		Data: toResponse(u),
+	res := struct {
+		ID    uuid.UUID `json:"id"`
+		Name  string    `json:"name"`
+		Email string    `json:"email"`
+	}{
+		ID:    u.ID,
+		Name:  u.Name,
+		Email: u.Email,
+	}
+
+	return c.JSON(Response{
+		Data: res,
 	})
 }

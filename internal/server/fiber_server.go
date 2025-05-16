@@ -12,11 +12,8 @@ import (
 	"github.com/gofiber/fiber/v3/middleware/recover"
 
 	"go-nextjs-dashboard/internal/bootstrap"
-	customerhttp "go-nextjs-dashboard/internal/customer/http"
-	dashboardhttp "go-nextjs-dashboard/internal/dashboard/http"
 	"go-nextjs-dashboard/internal/http"
 	"go-nextjs-dashboard/internal/logger"
-	userhttp "go-nextjs-dashboard/internal/user/http"
 )
 
 type Server struct {
@@ -30,7 +27,7 @@ func New(
 	app *bootstrap.App,
 ) *Server {
 	router := fiber.New(fiber.Config{
-		ErrorHandler: errHandler(app.Logger.With("component", "http")),
+		ErrorHandler: errHandler(app.Logger),
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  60 * time.Second,
@@ -46,9 +43,17 @@ func New(
 
 	// routes registration
 	api := router.Group("/api")
-	customerhttp.RegisterHTTP(api, app.CustSvc, app.Logger.With("component", "http.customer"))
-	userhttp.RegisterHTTP(api, app.UserSvc, app.Logger.With("component", "http.user"))
-	dashboardhttp.RegisterHTTP(api, app.DashSvc, app.Logger.With("component", "http.dashboard"))
+	http.RegisterRoutes(
+		api,
+		app.CustSvc,
+		app.UserSvc,
+		app.DashSvc,
+		app.InvSvc,
+
+		app.CreateInvoice,
+
+		app.Logger,
+	)
 
 	return &Server{
 		app:    app,
@@ -100,7 +105,11 @@ func errHandler(logger logger.Logger) fiber.ErrorHandler {
 		}
 
 		if code >= fiber.StatusInternalServerError {
-			logger.ErrorContext(c.Context(), err.Error())
+			var lKey = "http"
+			if loggerKey, ok := c.Context().Value("logger_key").(string); ok {
+				lKey = loggerKey
+			}
+			logger.With("component", lKey).ErrorContext(c.Context(), err.Error())
 		}
 
 		return c.Status(code).JSON(http.ErrResponse{

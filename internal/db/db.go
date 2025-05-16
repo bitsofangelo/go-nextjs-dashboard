@@ -65,8 +65,8 @@ type GormTxManager struct {
 	db *gorm.DB
 }
 
-func NewTxManager(db *gorm.DB) GormTxManager {
-	return GormTxManager{db: db}
+func NewTxManager(db *gorm.DB) *GormTxManager {
+	return &GormTxManager{db: db}
 }
 
 func (g *GormTxManager) Do(ctx context.Context, fn func(context.Context) error) error {

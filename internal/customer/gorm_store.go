@@ -1,4 +1,4 @@
-package gormstore
+package customer
 
 import (
 	"context"
@@ -10,7 +10,6 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
-	"go-nextjs-dashboard/internal/customer"
 	"go-nextjs-dashboard/internal/db"
 	"go-nextjs-dashboard/internal/logger"
 )
@@ -22,7 +21,7 @@ type customerModel struct {
 	ImageURL *string   `gorm:"type:varchar(255)"`
 }
 
-func (c *customerModel) BeforeCreate(_ *gorm.DB) (err error) {
+func (c *customerModel) BeforeCreate(*gorm.DB) (err error) {
 	if c.ID == uuid.Nil {
 		c.ID = uuid.New()
 	}
@@ -34,7 +33,7 @@ func (c *customerModel) TableName() string {
 	return "customers"
 }
 
-func toModel(c customer.Customer) customerModel {
+func toModel(c Customer) customerModel {
 	return customerModel{
 		ID:       c.ID,
 		Name:     c.Name,
@@ -43,8 +42,8 @@ func toModel(c customer.Customer) customerModel {
 	}
 }
 
-func toEntity(c customerModel) customer.Customer {
-	return customer.Customer{
+func toEntity(c customerModel) Customer {
+	return Customer{
 		ID:       c.ID,
 		Name:     c.Name,
 		Email:    c.Email,
@@ -52,22 +51,22 @@ func toEntity(c customerModel) customer.Customer {
 	}
 }
 
-type Store struct {
+type GormStore struct {
 	db     *gorm.DB
 	logger logger.Logger
 }
 
 // compile‑time check
-var _ customer.Store = (*Store)(nil)
+var _ Store = (*GormStore)(nil)
 
-func New(db *gorm.DB, log logger.Logger) *Store {
-	return &Store{
+func NewStore(db *gorm.DB, log logger.Logger) *GormStore {
+	return &GormStore{
 		db:     db,
-		logger: log,
+		logger: log.With("component", "store.gorm.customer"),
 	}
 }
 
-func (s *Store) DB(ctx context.Context) *gorm.DB {
+func (s *GormStore) DB(ctx context.Context) *gorm.DB {
 	if gormDB, ok := db.FromCtx(ctx); ok {
 		return gormDB.WithContext(ctx)
 	}
@@ -75,14 +74,14 @@ func (s *Store) DB(ctx context.Context) *gorm.DB {
 	return s.db.WithContext(ctx)
 }
 
-func (s *Store) List(ctx context.Context) ([]customer.Customer, error) {
+func (s *GormStore) List(ctx context.Context) ([]Customer, error) {
 	var models []customerModel
 
 	if err := s.DB(ctx).Find(&models).Error; err != nil {
 		return nil, fmt.Errorf("query customers: %w", err)
 	}
 
-	customers := make([]customer.Customer, len(models))
+	customers := make([]Customer, len(models))
 
 	for i, m := range models {
 		customers[i] = toEntity(m)
@@ -91,13 +90,13 @@ func (s *Store) List(ctx context.Context) ([]customer.Customer, error) {
 	return customers, nil
 }
 
-func (s *Store) Find(ctx context.Context, u uuid.UUID) (*customer.Customer, error) {
+func (s *GormStore) Find(ctx context.Context, id uuid.UUID) (*Customer, error) {
 	var model customerModel
 
-	if err := s.DB(ctx).First(&model, "id = ?", u).Error; err != nil {
+	if err := s.DB(ctx).First(&model, "id = ?", id).Error; err != nil {
 		switch {
 		case errors.Is(err, gorm.ErrRecordNotFound):
-			return nil, customer.ErrCustomerNotFound
+			return nil, ErrCustomerNotFound
 		default:
 			return nil, fmt.Errorf("query customer: %w", err)
 		}
@@ -107,10 +106,19 @@ func (s *Store) Find(ctx context.Context, u uuid.UUID) (*customer.Customer, erro
 	return &c, nil
 }
 
-func (s *Store) ExistsByEmail(ctx context.Context, email string) (bool, error) {
-	tx := s.DB(ctx).
-		Model(&customerModel{}).
-		Where("email = ?", email)
+func (s *GormStore) Exists(ctx context.Context, id uuid.UUID) (bool, error) {
+	tx := s.DB(ctx).Model(&customerModel{}).Where("id = ?", id)
+
+	exists, err := db.RecordExists(tx)
+	if err != nil {
+		return false, fmt.Errorf("query customer: %w", err)
+	}
+
+	return exists, nil
+}
+
+func (s *GormStore) ExistsByEmail(ctx context.Context, email string) (bool, error) {
+	tx := s.DB(ctx).Model(&customerModel{}).Where("email = ?", email)
 
 	exists, err := db.RecordExists(tx)
 	if err != nil {
@@ -120,7 +128,7 @@ func (s *Store) ExistsByEmail(ctx context.Context, email string) (bool, error) {
 	return exists, nil
 }
 
-func (s *Store) Save(ctx context.Context, c customer.Customer) (*customer.Customer, error) {
+func (s *GormStore) Save(ctx context.Context, c Customer) (*Customer, error) {
 	model := toModel(c)
 
 	if err := s.DB(ctx).Create(&model).Error; err != nil {
@@ -132,8 +140,8 @@ func (s *Store) Save(ctx context.Context, c customer.Customer) (*customer.Custom
 	return &c, nil
 }
 
-func (s *Store) SearchWithInvoiceTotals(ctx context.Context, search string) ([]customer.WithInvoiceTotals, error) {
-	var out []customer.WithInvoiceTotals
+func (s *GormStore) SearchWithInvoiceTotals(ctx context.Context, search string) ([]WithInvoiceTotals, error) {
+	var out []WithInvoiceTotals
 
 	start := time.Now()
 

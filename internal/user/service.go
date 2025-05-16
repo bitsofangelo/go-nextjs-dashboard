@@ -1,26 +1,25 @@
-package service
+package user
 
 import (
 	"context"
 	"fmt"
 
 	"go-nextjs-dashboard/internal/logger"
-	"go-nextjs-dashboard/internal/user"
 )
 
 type Service struct {
-	store  user.Store
+	store  Store
 	logger logger.Logger
 }
 
-func New(store user.Store, log logger.Logger) *Service {
+func NewService(store Store, log logger.Logger) *Service {
 	return &Service{
 		store:  store,
-		logger: log,
+		logger: log.With("component", "service.user"),
 	}
 }
 
-func (s *Service) GetByEmail(ctx context.Context, email string) (*user.User, error) {
+func (s *Service) GetByEmail(ctx context.Context, email string) (*User, error) {
 	u, err := s.store.FindByEmail(ctx, email)
 
 	if err != nil {
