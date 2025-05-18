@@ -94,7 +94,7 @@ func (s *GormStore) Save(ctx context.Context, i Invoice) (*Invoice, error) {
 	invModel := toModel(i)
 
 	if err := s.DB(ctx).Create(&invModel).Error; err != nil {
-		return nil, fmt.Errorf("save invoice: %w", err)
+		return nil, fmt.Errorf("store invoice: %w", err)
 	}
 
 	i = toEntity(invModel)

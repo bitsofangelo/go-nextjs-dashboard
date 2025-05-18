@@ -60,11 +60,17 @@ func (h *invoiceHandler) Create(c fiber.Ctx) error {
 		return fmt.Errorf("create invoice validation: %w", err)
 	}
 
-	var reqInv invoice.Invoice
-	reqInv.CustomerID, _ = uuid.Parse(req.CustomerID)
-	reqInv.Amount = req.Amount
-	reqInv.Status = req.Status
-	reqInv.Date = req.Date
+	custID, err := uuid.Parse(req.CustomerID)
+	if err != nil {
+		return fiber.NewError(fiber.StatusUnprocessableEntity, "invalid customer id.")
+	}
+
+	reqInv := invoice.Invoice{
+		CustomerID: custID,
+		Amount:     req.Amount,
+		Status:     req.Status,
+		Date:       req.Date,
+	}
 
 	inv, err := h.createInvoice.Execute(c.Context(), reqInv)
 	if err != nil {

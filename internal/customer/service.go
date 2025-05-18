@@ -6,22 +6,19 @@ import (
 
 	"github.com/google/uuid"
 
-	"go-nextjs-dashboard/internal/db"
 	"go-nextjs-dashboard/internal/event"
 	"go-nextjs-dashboard/internal/logger"
 )
 
 type Service struct {
 	store  Store
-	txm    db.TxManager
 	event  event.Publisher
 	logger logger.Logger
 }
 
-func NewService(store Store, txm db.TxManager, evt event.Publisher, log logger.Logger) *Service {
+func NewService(store Store, evt event.Publisher, log logger.Logger) *Service {
 	return &Service{
 		store:  store,
-		txm:    txm,
 		event:  evt,
 		logger: log.With("component", "service.customer"),
 	}
@@ -47,6 +44,15 @@ func (s *Service) GetByID(ctx context.Context, id uuid.UUID) (*Customer, error) 
 	return c, nil
 }
 
+func (s *Service) Exists(ctx context.Context, id uuid.UUID) (bool, error) {
+	exists, err := s.store.Exists(ctx, id)
+	if err != nil {
+		return false, fmt.Errorf("exists customer: %w", err)
+	}
+
+	return exists, nil
+}
+
 func (s *Service) Create(ctx context.Context, c Customer) (*Customer, error) {
 	exists, err := s.store.ExistsByEmail(ctx, c.Email)
 	if err != nil {
@@ -60,15 +66,8 @@ func (s *Service) Create(ctx context.Context, c Customer) (*Customer, error) {
 
 	var cust *Customer
 
-	err = s.txm.Do(ctx, func(txCtx context.Context) error {
-		if cust, err = s.store.Save(txCtx, c); err != nil {
-			return fmt.Errorf("save customer: %w", err)
-		}
-		return nil
-	})
-
-	if err != nil {
-		return nil, err
+	if cust, err = s.store.Save(ctx, c); err != nil {
+		return nil, fmt.Errorf("save customer: %w", err)
 	}
 
 	if err = s.event.Publish(ctx, Created{ID: cust.ID}); err != nil {

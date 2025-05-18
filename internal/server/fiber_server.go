@@ -45,11 +45,14 @@ func New(
 	api := router.Group("/api")
 	http.RegisterRoutes(
 		api,
+
+		// domain services
 		app.CustSvc,
 		app.UserSvc,
 		app.DashSvc,
 		app.InvSvc,
 
+		// use cases
 		app.CreateInvoice,
 
 		app.Logger,
@@ -83,7 +86,7 @@ func (s *Server) Run() error {
 		shutCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
 
-		// graceful shutdown
+		// shutdown fiber
 		if err := s.router.ShutdownWithContext(shutCtx); err != nil {
 			return fmt.Errorf("graceful shutdown failed, forcing close: %w", err)
 		}

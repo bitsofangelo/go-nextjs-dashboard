@@ -9,6 +9,8 @@ import (
 	"go-nextjs-dashboard/internal/logger"
 )
 
+var ErrInvalidCustomerID = fmt.Errorf("invalid customer id")
+
 type Service struct {
 	store  Store
 	logger logger.Logger
@@ -29,9 +31,15 @@ func (s *Service) GetByID(ctx context.Context, id uuid.UUID) (*Invoice, error) {
 	return inv, nil
 }
 
-// func (s *Service) Create(ctx context.Context, inv invoice.Invoice) (*invoice.Invoice, error) {
-// 	customerExists, err := s.custStore.Exists(ctx, inv.CustomerID)
-// 	if err != nil {
-//
-// 	}
-// }
+func (s *Service) Create(ctx context.Context, inv Invoice) (*Invoice, error) {
+	if inv.CustomerID == uuid.Nil {
+		return nil, ErrInvalidCustomerID
+	}
+
+	i, err := s.store.Save(ctx, inv)
+	if err != nil {
+		return nil, fmt.Errorf("save invoice: %w", err)
+	}
+
+	return i, nil
+}

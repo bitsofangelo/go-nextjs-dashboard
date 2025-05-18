@@ -13,11 +13,14 @@ import (
 
 func RegisterRoutes(
 	r fiber.Router,
+
+	// domain services
 	custSvc *customer.Service,
 	userSvc *user.Service,
 	dashSvc *dashboard.Service,
 	invSvc *invoice.Service,
 
+	// use cases
 	createInvoice *app.CreateInvoice,
 
 	logger logger.Logger,
