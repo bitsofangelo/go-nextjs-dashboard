@@ -12,6 +12,7 @@ import (
 	"github.com/gofiber/fiber/v3/middleware/recover"
 
 	"go-nextjs-dashboard/internal/bootstrap"
+	"go-nextjs-dashboard/internal/config"
 	"go-nextjs-dashboard/internal/http"
 	"go-nextjs-dashboard/internal/logger"
 )
@@ -27,7 +28,7 @@ func New(
 	app *bootstrap.App,
 ) *Server {
 	router := fiber.New(fiber.Config{
-		ErrorHandler: errHandler(app.Logger),
+		ErrorHandler: errHandler(app.Config, app.Logger),
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  60 * time.Second,
@@ -37,7 +38,7 @@ func New(
 	// router.Use(logger.New())
 	router.Use(http.RequestID())
 	router.Use(cors.New(cors.Config{}))
-	router.Use(limiter.New(limiter.Config{Max: 10}))
+	router.Use(limiter.New(limiter.Config{Max: 60}))
 	router.Use(http.ValidationResponse())
 	router.Use(recover.New(recover.Config{}))
 
@@ -94,7 +95,7 @@ func (s *Server) Run() error {
 	}
 }
 
-func errHandler(logger logger.Logger) fiber.ErrorHandler {
+func errHandler(cfg *config.Config, logger logger.Logger) fiber.ErrorHandler {
 	return func(c fiber.Ctx, err error) error {
 		code := fiber.StatusInternalServerError
 		message := "Internal Server Error"
@@ -107,16 +108,22 @@ func errHandler(logger logger.Logger) fiber.ErrorHandler {
 			}
 		}
 
+		var dErr string
 		if code >= fiber.StatusInternalServerError {
 			var lKey = "http"
 			if loggerKey, ok := c.Context().Value("logger_key").(string); ok {
 				lKey = loggerKey
 			}
 			logger.With("component", lKey).ErrorContext(c.Context(), err.Error())
+
+			if cfg.AppDebug {
+				dErr = err.Error()
+			}
 		}
 
 		return c.Status(code).JSON(http.ErrResponse{
 			Message: message,
+			Error:   dErr,
 		})
 	}
 }

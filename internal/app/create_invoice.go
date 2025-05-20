@@ -30,7 +30,7 @@ func (c *CreateInvoice) Execute(ctx context.Context, i invoice.Invoice) (*invoic
 	var inv *invoice.Invoice
 
 	txErr := c.txm.Do(ctx, func(txCtx context.Context) error {
-		exists, err := c.custSvc.Exists(txCtx, i.CustomerID)
+		exists, err := c.custSvc.Exists(txCtx, *i.CustomerID)
 		if err != nil {
 			return fmt.Errorf("exists customer: %w", err)
 		}

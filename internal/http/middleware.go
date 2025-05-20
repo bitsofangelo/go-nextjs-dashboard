@@ -5,7 +5,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/go-playground/validator/v10"
+	govalidator "github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/limiter"
 	"github.com/google/uuid"
@@ -23,7 +23,7 @@ func ValidationResponse() fiber.Handler {
 		err := c.Next()
 
 		if err != nil {
-			var vErrs validator.ValidationErrors
+			var vErrs govalidator.ValidationErrors
 
 			if errors.As(err, &vErrs) {
 				trans, found := Uni.GetTranslator(c.Get("Accept-Language"))

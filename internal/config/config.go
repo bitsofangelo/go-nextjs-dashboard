@@ -9,9 +9,19 @@ import (
 	"github.com/spf13/viper"
 )
 
+type Env = int
+
+const (
+	Production Env = iota
+	Staging
+	Local
+)
+
 type Config struct {
+	AppEnv      Env
 	AppPort     string `mapstructure:"APP_PORT"`
 	AppTimezone string `mapstructure:"APP_TIMEZONE"`
+	AppDebug    bool   `mapstructure:"APP_DEBUG"`
 
 	DBHost string `mapstructure:"DB_HOST"`
 	DBPort int    `mapstructure:"DB_PORT"`
@@ -36,6 +46,10 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("reading .env: %w", err)
 	}
 
+	if len(viper.AllKeys()) == 0 {
+		return nil, fmt.Errorf("no .env variables found")
+	}
+
 	// Also allow real ENV to override
 	viper.AutomaticEnv()
 
@@ -43,6 +57,15 @@ func Load() (*Config, error) {
 	var cfg Config
 	if err := viper.Unmarshal(&cfg); err != nil {
 		return nil, fmt.Errorf("unmarshal config: %w", err)
+	}
+
+	switch viper.GetString("APP_ENV") {
+	case "production":
+		cfg.AppEnv = Production
+	case "staging":
+		cfg.AppEnv = Staging
+	default:
+		cfg.AppEnv = Local
 	}
 
 	return &cfg, nil

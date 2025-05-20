@@ -56,25 +56,6 @@ func New() (*App, error) {
 		os.Exit(1)
 	}
 
-	// txm := database.NewTxManager(db)
-
-	// init events and handlers
-	// buses := bus.RegisterAll()
-	// eventBroker := event.NewBroker(buses)
-
-	// wire dependencies
-	// custStore := customer.NewStore(db, logger)
-	// custSvc := customer.NewService(custStore, eventBroker, logger)
-	// userStore := user.NewStore(db, logger)
-	// userSvc := user.NewService(userStore, logger)
-	// dashStore := dashboard.NewStore(db, logger)
-	// dashSvc := dashboard.NewService(dashStore, logger)
-	// invStore := invoice.NewStore(db, logger)
-	// invSvc := invoice.NewService(invStore, logger)
-
-	// use cases
-	// createInvoice := app.NewCreateInvoice(custSvc, invSvc, txm, logger)
-
 	return InitializeApp(cfg, logger, db)
 }
 

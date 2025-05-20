@@ -11,12 +11,13 @@ import (
 
 	"go-nextjs-dashboard/internal/db"
 	"go-nextjs-dashboard/internal/logger"
+	"go-nextjs-dashboard/internal/optional"
 )
 
 type invoiceModel struct {
 	ID         uuid.UUID
-	CustomerID uuid.UUID
-	Amount     float32
+	CustomerID optional.Optional[uuid.UUID]
+	Amount     float64
 	Status     string
 	Date       time.Time
 }
@@ -36,7 +37,7 @@ func (*invoiceModel) TableName() string {
 func toModel(i Invoice) invoiceModel {
 	return invoiceModel{
 		ID:         i.ID,
-		CustomerID: i.CustomerID,
+		CustomerID: optional.FromPtr(i.CustomerID),
 		Amount:     i.Amount,
 		Status:     i.Status,
 		Date:       i.Date,
@@ -46,7 +47,7 @@ func toModel(i Invoice) invoiceModel {
 func toEntity(i invoiceModel) Invoice {
 	return Invoice{
 		ID:         i.ID,
-		CustomerID: i.CustomerID,
+		CustomerID: i.CustomerID.Ptr(),
 		Amount:     i.Amount,
 		Status:     i.Status,
 		Date:       i.Date,
@@ -90,7 +91,17 @@ func (s *GormStore) Find(ctx context.Context, id uuid.UUID) (*Invoice, error) {
 	return &inv, nil
 }
 
-func (s *GormStore) Save(ctx context.Context, i Invoice) (*Invoice, error) {
+func (s *GormStore) Exists(ctx context.Context, id uuid.UUID) (bool, error) {
+	tx := s.DB(ctx).Model(&invoiceModel{}).Where("id = ?", id)
+
+	exists, err := db.RecordExists(tx)
+	if err != nil {
+		return false, fmt.Errorf("query invoice exists: %w", err)
+	}
+	return exists, nil
+}
+
+func (s *GormStore) Insert(ctx context.Context, i Invoice) (*Invoice, error) {
 	invModel := toModel(i)
 
 	if err := s.DB(ctx).Create(&invModel).Error; err != nil {
@@ -99,4 +110,17 @@ func (s *GormStore) Save(ctx context.Context, i Invoice) (*Invoice, error) {
 
 	i = toEntity(invModel)
 	return &i, nil
+}
+
+func (s *GormStore) Update(ctx context.Context, id uuid.UUID, req *UpdateRequest) error {
+	err := s.DB(ctx).
+		Model(&invoiceModel{}).
+		Where("id = ?", id).
+		Updates(req).Error
+
+	if err != nil {
+		return fmt.Errorf("update invoice: %w", err)
+	}
+
+	return nil
 }

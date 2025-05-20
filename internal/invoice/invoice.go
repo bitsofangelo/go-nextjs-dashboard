@@ -8,8 +8,8 @@ import (
 
 type Invoice struct {
 	ID         uuid.UUID
-	CustomerID uuid.UUID
-	Amount     float32
+	CustomerID *uuid.UUID
+	Amount     float64
 	Status     string
 	Date       time.Time
 }

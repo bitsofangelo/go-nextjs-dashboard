@@ -111,7 +111,7 @@ func (s *GormStore) Exists(ctx context.Context, id uuid.UUID) (bool, error) {
 
 	exists, err := db.RecordExists(tx)
 	if err != nil {
-		return false, fmt.Errorf("query customer: %w", err)
+		return false, fmt.Errorf("query customer exists: %w", err)
 	}
 
 	return exists, nil
@@ -128,7 +128,7 @@ func (s *GormStore) ExistsByEmail(ctx context.Context, email string) (bool, erro
 	return exists, nil
 }
 
-func (s *GormStore) Save(ctx context.Context, c Customer) (*Customer, error) {
+func (s *GormStore) Insert(ctx context.Context, c Customer) (*Customer, error) {
 	model := toModel(c)
 
 	if err := s.DB(ctx).Create(&model).Error; err != nil {

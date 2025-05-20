@@ -9,14 +9,14 @@ import (
 	"go-nextjs-dashboard/internal/event"
 )
 
-func RegisterAll() map[reflect.Type]event.Publisher {
-	buses := make(map[reflect.Type]event.Publisher)
+func RegisterAll() map[string]event.Publisher {
+	buses := make(map[string]event.Publisher)
 
 	custCreatedBus := newBus[customer.Created]()
-	custCreatedT := reflect.TypeOf(customer.Created{})
+	custCreatedKey := reflect.TypeOf(customer.Created{}).String()
 	{
 		custCreatedBus.Subscribe(SendWelcomeMessage)
-		buses[custCreatedT] = custCreatedBus
+		buses[custCreatedKey] = custCreatedBus
 	}
 
 	return buses

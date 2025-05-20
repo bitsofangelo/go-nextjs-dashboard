@@ -129,7 +129,7 @@ type createRequest struct {
 }
 
 func (req *createRequest) Validate(ctx context.Context) error {
-	if err := Validator.StructCtx(ctx, req); err != nil {
+	if err := validator.StructCtx(ctx, req); err != nil {
 		return fmt.Errorf("validate createRequest: %w", err)
 	}
 

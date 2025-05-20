@@ -23,20 +23,20 @@ type Publisher interface {
 type Handler[T Event] func(context.Context, T) error
 
 type Broker struct {
-	buses map[reflect.Type]Publisher
+	buses map[string]Publisher
 }
 
-func NewBroker(buses map[reflect.Type]Publisher) *Broker {
+func NewBroker(buses map[string]Publisher) *Broker {
 	return &Broker{
 		buses: buses,
 	}
 }
 
 func (r *Broker) Publish(ctx context.Context, evt Event) error {
-	t := reflect.TypeOf(evt)
+	t := reflect.TypeOf(evt).String()
 	bus, ok := r.buses[t]
 	if !ok {
-		return errors.New(fmt.Sprintf("eventBus [%s] not registered", t.String()))
+		return errors.New(fmt.Sprintf("eventBus [%s] not registered", t))
 	}
 
 	return bus.Publish(ctx, evt)

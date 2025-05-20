@@ -36,14 +36,15 @@ func RegisterRoutes(
 		cg.Get("/", custHandler.List)
 		cg.Get("/filtered", custHandler.SearchWithInvoiceTotals)
 		cg.Get("/:id", custHandler.Get)
-		cg.Post("/", custHandler.Create, rateLimiter(5))
+		cg.Post("/", custHandler.Create, rateLimiter(30))
 	}
 
 	// invoice routes
 	ig := r.Group("/invoices", loggerKeyMiddleware("http.invoice"))
 	{
 		ig.Get("/:id", invHandler.Get)
-		ig.Post("/", invHandler.Create, rateLimiter(5))
+		ig.Post("/", invHandler.Create, rateLimiter(30))
+		ig.Put("/:id", invHandler.Update, rateLimiter(30))
 	}
 
 	// user routes

@@ -15,7 +15,7 @@ type Store interface {
 	Find(ctx context.Context, id uuid.UUID) (*Customer, error)
 	Exists(ctx context.Context, id uuid.UUID) (bool, error)
 	ExistsByEmail(ctx context.Context, email string) (bool, error)
-	Save(ctx context.Context, c Customer) (*Customer, error)
+	Insert(ctx context.Context, c Customer) (*Customer, error)
 	SearchWithInvoiceTotals(ctx context.Context, search string) ([]WithInvoiceTotals, error)
 }
 

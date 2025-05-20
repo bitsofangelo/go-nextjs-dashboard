@@ -8,6 +8,7 @@ type Response struct {
 
 type ErrResponse struct {
 	Message string `json:"message"`
+	Error   string `json:"error,omitempty"`
 }
 
 type ValidationErrResponse struct {

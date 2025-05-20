@@ -66,8 +66,8 @@ func (s *Service) Create(ctx context.Context, c Customer) (*Customer, error) {
 
 	var cust *Customer
 
-	if cust, err = s.store.Save(ctx, c); err != nil {
-		return nil, fmt.Errorf("save customer: %w", err)
+	if cust, err = s.store.Insert(ctx, c); err != nil {
+		return nil, fmt.Errorf("insert customer: %w", err)
 	}
 
 	if err = s.event.Publish(ctx, Created{ID: cust.ID}); err != nil {
