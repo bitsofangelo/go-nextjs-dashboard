@@ -14,6 +14,7 @@ import (
 	"go-nextjs-dashboard/internal/bootstrap"
 	"go-nextjs-dashboard/internal/config"
 	"go-nextjs-dashboard/internal/http"
+	"go-nextjs-dashboard/internal/http/response"
 	"go-nextjs-dashboard/internal/logger"
 )
 
@@ -121,7 +122,7 @@ func errHandler(cfg *config.Config, logger logger.Logger) fiber.ErrorHandler {
 			}
 		}
 
-		return c.Status(code).JSON(http.ErrResponse{
+		return c.Status(code).JSON(response.Error{
 			Message: message,
 			Error:   dErr,
 		})

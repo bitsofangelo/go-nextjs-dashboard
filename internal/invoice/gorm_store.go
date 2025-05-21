@@ -2,6 +2,7 @@ package invoice
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"time"
@@ -10,6 +11,7 @@ import (
 	"gorm.io/gorm"
 
 	"go-nextjs-dashboard/internal/db"
+	"go-nextjs-dashboard/internal/listing"
 	"go-nextjs-dashboard/internal/logger"
 	"go-nextjs-dashboard/internal/optional"
 )
@@ -54,6 +56,14 @@ func toEntity(i invoiceModel) Invoice {
 	}
 }
 
+func toEntities(m []invoiceModel) []Invoice {
+	res := make([]Invoice, len(m))
+	for i, e := range m {
+		res[i] = toEntity(e)
+	}
+	return res
+}
+
 type GormStore struct {
 	db     *gorm.DB
 	logger logger.Logger
@@ -73,6 +83,58 @@ func (s *GormStore) DB(ctx context.Context) *gorm.DB {
 		return gormDB.WithContext(ctx)
 	}
 	return s.db.WithContext(ctx)
+}
+
+func (s *GormStore) List(ctx context.Context, sort listing.SortOrder) ([]Invoice, error) {
+	var models []invoiceModel
+	var sortOrder string
+
+	switch sort {
+	case listing.SortLatest:
+		sortOrder = "DESC"
+	default:
+		sortOrder = "ASC"
+	}
+
+	if err := s.DB(ctx).Order("date " + sortOrder).Find(&models).Error; err != nil {
+		return nil, fmt.Errorf("query invoices: %w", err)
+	}
+
+	return toEntities(models), nil
+}
+
+func (s *GormStore) Search(ctx context.Context, req SearchFilter, p listing.Page) (listing.Result[Invoice], error) {
+	var sort string
+	switch req.Sort {
+	case listing.SortLatest:
+		sort = "DESC"
+	default:
+		sort = "ASC"
+	}
+
+	q := s.DB(ctx).
+		Model(&invoiceModel{}).
+		Joins("JOIN customers ON invoices.customer_id = customers.id").
+		Where(`
+			customers.name LIKE @search OR
+			customers.email LIKE @search OR
+			CAST(invoices.amount AS CHAR) LIKE @search OR
+			CAST(invoices.date AS CHAR) LIKE @search OR
+			invoices.status LIKE @search
+		`, sql.Named("search", "%"+req.Text+"%")).
+		Order("invoices.date " + sort)
+
+	var total int64
+	if err := q.Model(&Invoice{}).Count(&total).Error; err != nil {
+		return listing.Result[Invoice]{}, fmt.Errorf("count invoices: %w", err)
+	}
+
+	var rows []invoiceModel
+	if err := q.Scopes(p.Scope()).Find(&rows).Error; err != nil {
+		return listing.Result[Invoice]{}, fmt.Errorf("query invoices: %w", err)
+	}
+
+	return listing.NewResult(toEntities(rows), p, total), nil
 }
 
 func (s *GormStore) Find(ctx context.Context, id uuid.UUID) (*Invoice, error) {
@@ -112,7 +174,7 @@ func (s *GormStore) Insert(ctx context.Context, i Invoice) (*Invoice, error) {
 	return &i, nil
 }
 
-func (s *GormStore) Update(ctx context.Context, id uuid.UUID, req *UpdateRequest) error {
+func (s *GormStore) Update(ctx context.Context, id uuid.UUID, req *UpdateInput) error {
 	err := s.DB(ctx).
 		Model(&invoiceModel{}).
 		Where("id = ?", id).
@@ -123,4 +185,41 @@ func (s *GormStore) Update(ctx context.Context, id uuid.UUID, req *UpdateRequest
 	}
 
 	return nil
+}
+
+func (s *GormStore) Delete(ctx context.Context, id uuid.UUID) error {
+	if err := s.DB(ctx).Delete(&invoiceModel{}, id).Error; err != nil {
+		return fmt.Errorf("delete invoice: %w", err)
+	}
+	return nil
+}
+
+func (s *GormStore) ListWithCustomerInfo(ctx context.Context, sort listing.SortOrder) ([]WithCustomerInfo, error) {
+	var out []WithCustomerInfo
+	var sortOrder string
+
+	switch sort {
+	case listing.SortLatest:
+		sortOrder = "DESC"
+	default:
+		sortOrder = "ASC"
+	}
+
+	err := s.DB(ctx).
+		Model(&invoiceModel{}).
+		Select(`
+			invoices.*,
+			customers.name as customer_name,
+			customers.email as customer_email,
+			customers.image_url as customer_image_url
+		`).
+		Joins("LEFT JOIN customers ON invoices.customer_id = customers.id").
+		Order("date " + sortOrder).
+		Find(&out).Error
+
+	if err != nil {
+		return nil, fmt.Errorf("query invoices with customer info: %w", err)
+	}
+
+	return out, nil
 }

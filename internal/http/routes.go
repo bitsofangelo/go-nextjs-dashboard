@@ -25,10 +25,16 @@ func RegisterRoutes(
 
 	logger logger.Logger,
 ) {
-	custHandler := newCustomerHandler(custSvc, logger)
-	usrHandler := newUserHandler(userSvc, logger)
 	dashHandler := newDashboardHandler(dashSvc, logger)
+	usrHandler := newUserHandler(userSvc, logger)
+	custHandler := newCustomerHandler(custSvc, logger)
 	invHandler := newInvoiceHandler(invSvc, createInvoice, logger)
+
+	// dashboard routes
+	r.Get("/overview", dashHandler.GetOverview, loggerKeyMiddleware("http.dashboard"))
+
+	// user routes
+	r.Get("/users/email/:email", usrHandler.GetByEmail, loggerKeyMiddleware("http.user"))
 
 	// customer routes
 	cg := r.Group("/customers", loggerKeyMiddleware("http.customer"))
@@ -42,14 +48,13 @@ func RegisterRoutes(
 	// invoice routes
 	ig := r.Group("/invoices", loggerKeyMiddleware("http.invoice"))
 	{
+		ig.Get("/latest", invHandler.GetLatest)
+		ig.Get("/filtered", invHandler.Search)
+		// ig.Get("/invoices/total-pages", invoiceHandler.GetInvoicePages)
+
 		ig.Get("/:id", invHandler.Get)
 		ig.Post("/", invHandler.Create, rateLimiter(30))
-		ig.Put("/:id", invHandler.Update, rateLimiter(30))
+		ig.Patch("/:id", invHandler.Update, rateLimiter(30))
+		ig.Delete("/:id", invHandler.Delete, rateLimiter(30))
 	}
-
-	// user routes
-	r.Get("/users/email/:email", usrHandler.GetByEmail, loggerKeyMiddleware("http.user"))
-
-	// dashboard routes
-	r.Get("/overview", dashHandler.GetOverview, loggerKeyMiddleware("http.dashboard"))
 }

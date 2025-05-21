@@ -47,7 +47,7 @@ func (e MapValidationErrors) Translate(ut ut.Translator) map[string][]string {
 			}
 		}
 
-		// if fieldErr, ok := mapErr.(validator.FieldError); ok {
+		// if fieldErr, ok := mapErr.(validation.FieldError); ok {
 		// 	// ut.T(key, key)
 		// 	// trans[key] = fieldErr.Translate(ut)
 		// 	t, err := ut.T(fieldErr.Tag(), key, fieldErr.Param())
@@ -63,7 +63,7 @@ func (e MapValidationErrors) Translate(ut ut.Translator) map[string][]string {
 }
 
 func ValidateMap(data map[string]interface{}, rules map[string]interface{}) error {
-	// var errs validator.ValidationErrors
+	// var errs validation.ValidationErrors
 	mapErrs := config.Validate.ValidateMap(data, rules)
 
 	if len(mapErrs) == 0 {

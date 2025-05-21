@@ -9,6 +9,9 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/limiter"
 	"github.com/google/uuid"
+
+	"go-nextjs-dashboard/internal/http/response"
+	"go-nextjs-dashboard/internal/http/validation"
 )
 
 func init() {
@@ -26,9 +29,9 @@ func ValidationResponse() fiber.Handler {
 			var vErrs govalidator.ValidationErrors
 
 			if errors.As(err, &vErrs) {
-				trans, found := Uni.GetTranslator(c.Get("Accept-Language"))
+				trans, found := validation.Uni.GetTranslator(c.Get("Accept-Language"))
 				if !found {
-					trans, _ = Uni.GetTranslator("en")
+					trans, _ = validation.Uni.GetTranslator("en")
 				}
 
 				out := make(map[string]string, len(vErrs))
@@ -37,7 +40,7 @@ func ValidationResponse() fiber.Handler {
 				}
 
 				return c.Status(http.StatusUnprocessableEntity).
-					JSON(ValidationErrResponse{
+					JSON(response.ValidationError{
 						Message: "The given data was invalid.",
 						Errors:  out,
 					})

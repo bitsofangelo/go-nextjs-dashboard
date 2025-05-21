@@ -42,14 +42,14 @@ func NewCreateInvoiceRequest(c *fiber.Ctx) (*CreateInvoiceDTO, error) {
 
 	if err := validator.ValidateMap(payload, rules); err != nil {
 		// return nil, err
-		// return validator.ValidationErrors
+		// return validation.ValidationErrors
 		// for _, fieldErrs := range errs {
-		// 	// if fieldErr, ok := fieldErrs.(validator.FieldError); ok {
+		// 	// if fieldErr, ok := fieldErrs.(validation.FieldError); ok {
 		// 	// 	log.Printf("%T -- %v -- %v", fieldErr, fieldErr.Translate(trans), fieldErr.Namespace())
 		// 	// }
-		// 	for _, err := range fieldErrs.(validator.ValidationErrors) {
+		// 	for _, err := range fieldErrs.(validation.ValidationErrors) {
 		// 		log.Printf("%T -- %v -- %v", err, err.Translate(trans), err.Namespace())
-		// 		// return nil, err.(validator.FieldError)
+		// 		// return nil, err.(validation.FieldError)
 		// 	}
 		// }
 

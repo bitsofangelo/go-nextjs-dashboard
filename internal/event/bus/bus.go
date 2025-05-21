@@ -25,9 +25,10 @@ func (b *eventBus[T]) Subscribe(fn event.Handler[T]) {
 }
 
 func (b *eventBus[T]) Publish(ctx context.Context, evt event.Event) error {
-	b.mu.RLock()
+	// no need locks since b.handlers is read-only after init
+	// b.mu.RLock()
 	handlers := append([]event.Handler[T]{}, b.handlers...)
-	b.mu.RUnlock()
+	// b.mu.RUnlock()
 
 	if len(handlers) == 0 {
 		return nil

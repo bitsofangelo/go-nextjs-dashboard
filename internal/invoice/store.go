@@ -7,21 +7,39 @@ import (
 
 	"github.com/google/uuid"
 
+	"go-nextjs-dashboard/internal/listing"
 	"go-nextjs-dashboard/internal/optional"
 )
 
 var ErrInvoiceNotFound = errors.New("invoice not found")
 
 type Store interface {
+	List(context.Context, listing.SortOrder) ([]Invoice, error)
+	Search(context.Context, SearchFilter, listing.Page) (listing.Result[Invoice], error)
 	Find(context.Context, uuid.UUID) (*Invoice, error)
-	Exists(ctx context.Context, id uuid.UUID) (bool, error)
+	Exists(context.Context, uuid.UUID) (bool, error)
 	Insert(context.Context, Invoice) (*Invoice, error)
-	Update(context.Context, uuid.UUID, *UpdateRequest) error
+	Update(context.Context, uuid.UUID, *UpdateInput) error
+	Delete(context.Context, uuid.UUID) error
+
+	ListWithCustomerInfo(context.Context, listing.SortOrder) ([]WithCustomerInfo, error)
 }
 
-type UpdateRequest struct {
+type SearchFilter struct {
+	Text string
+	Sort listing.SortOrder
+}
+
+type UpdateInput struct {
 	CustomerID optional.Optional[uuid.UUID]
 	Amount     float64
 	Status     string
 	Date       time.Time
+}
+
+type WithCustomerInfo struct {
+	Invoice
+	CustomerName     string
+	CustomerEmail    string
+	CustomerImageURL string
 }

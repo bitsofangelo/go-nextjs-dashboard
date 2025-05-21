@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 
 	"go-nextjs-dashboard/internal/customer"
+	"go-nextjs-dashboard/internal/http/validation"
 	"go-nextjs-dashboard/internal/logger"
 )
 
@@ -129,7 +130,7 @@ type createRequest struct {
 }
 
 func (req *createRequest) Validate(ctx context.Context) error {
-	if err := validator.StructCtx(ctx, req); err != nil {
+	if err := validation.Validator.StructCtx(ctx, req); err != nil {
 		return fmt.Errorf("validate createRequest: %w", err)
 	}
 

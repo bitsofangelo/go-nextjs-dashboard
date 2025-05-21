@@ -1,4 +1,4 @@
-package http
+package validation
 
 import (
 	"fmt"
@@ -18,15 +18,15 @@ import (
 )
 
 var (
-	validator *govalidator.Validate
+	Validator *govalidator.Validate
 	Uni       *ut.UniversalTranslator
 )
 
 func init() {
-	validator = govalidator.New()
+	Validator = govalidator.New()
 
 	// Registers a function to get alternate JSON names
-	validator.RegisterTagNameFunc(func(fld reflect.StructField) string {
+	Validator.RegisterTagNameFunc(func(fld reflect.StructField) string {
 		name := strings.SplitN(fld.Tag.Get("json"), ",", 2)[0]
 		if name == "" || name == "-" {
 			return fld.Name
@@ -42,11 +42,11 @@ func init() {
 	enT, _ := Uni.GetTranslator("en")
 	frT, _ := Uni.GetTranslator("fr")
 
-	if err := enTrans.RegisterDefaultTranslations(validator, enT); err != nil {
+	if err := enTrans.RegisterDefaultTranslations(Validator, enT); err != nil {
 		log.Fatal(fmt.Errorf("register en translations error: %w", err))
 	}
 
-	if err := frTrans.RegisterDefaultTranslations(validator, frT); err != nil {
+	if err := frTrans.RegisterDefaultTranslations(Validator, frT); err != nil {
 		log.Fatal(fmt.Errorf("register fr translations error: %w", err))
 	}
 
@@ -55,8 +55,8 @@ func init() {
 	registerOptionalType[bool]()
 	registerOptionalType[float64]()
 
-	validator.RegisterAlias("rfc3339", "datetime="+time.RFC3339)
-	err := validator.RegisterTranslation(
+	Validator.RegisterAlias("rfc3339", "datetime="+time.RFC3339)
+	err := Validator.RegisterTranslation(
 		"rfc3339",
 		enT,
 		func(ut ut.Translator) error {
@@ -73,7 +73,7 @@ func init() {
 }
 
 func registerOptionalType[T comparable]() {
-	validator.RegisterCustomTypeFunc(func(field reflect.Value) interface{} {
+	Validator.RegisterCustomTypeFunc(func(field reflect.Value) interface{} {
 		o, ok := field.Interface().(optional.Optional[T])
 
 		if !ok {

@@ -3,10 +3,11 @@ package service
 import (
 	"database/sql"
 	"fmt"
+	"math"
+
 	"go-nextjs-dashboard/config"
 	"go-nextjs-dashboard/model"
 	"go-nextjs-dashboard/request"
-	"math"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"

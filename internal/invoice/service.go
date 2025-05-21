@@ -6,7 +6,12 @@ import (
 
 	"github.com/google/uuid"
 
+	"go-nextjs-dashboard/internal/listing"
 	"go-nextjs-dashboard/internal/logger"
+)
+
+const (
+	defaultLimit = 50
 )
 
 var ErrInvalidCustomerID = fmt.Errorf("invalid customer id")
@@ -23,7 +28,24 @@ func NewService(store Store, logger logger.Logger) *Service {
 	}
 }
 
-func (s *Service) GetByID(ctx context.Context, id uuid.UUID) (*Invoice, error) {
+func (s *Service) ListWithCustomerInfo(ctx context.Context, sort listing.SortOrder) ([]WithCustomerInfo, error) {
+	out, err := s.store.ListWithCustomerInfo(ctx, sort)
+	if err != nil {
+		return nil, fmt.Errorf("list invoices: %w", err)
+	}
+
+	return out, nil
+}
+
+func (s *Service) Search(ctx context.Context, req SearchFilter, page listing.Page) (listing.Result[Invoice], error) {
+	res, err := s.store.Search(ctx, req, page)
+	if err != nil {
+		return listing.Result[Invoice]{}, fmt.Errorf("search invoices: %w", err)
+	}
+	return res, nil
+}
+
+func (s *Service) Get(ctx context.Context, id uuid.UUID) (*Invoice, error) {
 	inv, err := s.store.Find(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("find invoice: %w", err)
@@ -52,7 +74,7 @@ func (s *Service) Create(ctx context.Context, inv Invoice) (*Invoice, error) {
 	return i, nil
 }
 
-func (s *Service) Update(ctx context.Context, id uuid.UUID, req *UpdateRequest) (*Invoice, error) {
+func (s *Service) Update(ctx context.Context, id uuid.UUID, req *UpdateInput) (*Invoice, error) {
 	exists, err := s.Exists(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("exists invoice: %w", err)
@@ -65,10 +87,25 @@ func (s *Service) Update(ctx context.Context, id uuid.UUID, req *UpdateRequest) 
 		return nil, fmt.Errorf("update invoice: %w", err)
 	}
 
-	inv, err := s.GetByID(ctx, id)
+	inv, err := s.Get(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("get invoice: %w", err)
 	}
 
 	return inv, nil
+}
+
+func (s *Service) Delete(ctx context.Context, id uuid.UUID) error {
+	exists, err := s.Exists(ctx, id)
+	if err != nil {
+		return fmt.Errorf("exists invoice: %w", err)
+	}
+	if !exists {
+		return ErrInvoiceNotFound
+	}
+
+	if err = s.store.Delete(ctx, id); err != nil {
+		return fmt.Errorf("delete invoice: %w", err)
+	}
+	return nil
 }

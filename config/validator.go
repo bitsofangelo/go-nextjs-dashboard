@@ -60,7 +60,7 @@ func InitValidator() {
 	// errs := Validate.VarWithKey("email", "test", "required,email")
 
 	// if errs != nil {
-	// 	log.Println(errs) // output: Key: "" Error:Field validator for "" failed on the "email" tag
+	// 	log.Println(errs) // output: Key: "" Error:Field validation for "" failed on the "email" tag
 	// 	return
 	// }
 }
