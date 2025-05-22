@@ -46,7 +46,7 @@ func Open(cfg *config.Config, log logger.Logger) (*gorm.DB, error) {
 
 	sqlDB, err := db.DB()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("extract db: %v", err)
 	}
 	sqlDB.SetMaxOpenConns(10)
 	// sqlDB.SetMaxIdleConns(cfg.MaxIdleConns)

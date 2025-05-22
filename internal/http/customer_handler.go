@@ -13,19 +13,19 @@ import (
 	"go-nextjs-dashboard/internal/logger"
 )
 
-type customerHandler struct {
+type CustomerHandler struct {
 	svc    *customer.Service
 	logger logger.Logger
 }
 
-func newCustomerHandler(svc *customer.Service, log logger.Logger) *customerHandler {
-	return &customerHandler{
+func NewCustomerHandler(svc *customer.Service, log logger.Logger) *CustomerHandler {
+	return &CustomerHandler{
 		svc:    svc,
 		logger: log.With("component", "http.customer"),
 	}
 }
 
-func (h *customerHandler) List(c fiber.Ctx) error {
+func (h *CustomerHandler) List(c fiber.Ctx) error {
 	customers, err := h.svc.List(c.Context())
 	if err != nil {
 		switch {
@@ -46,7 +46,7 @@ func (h *customerHandler) List(c fiber.Ctx) error {
 	})
 }
 
-func (h *customerHandler) Get(c fiber.Ctx) error {
+func (h *CustomerHandler) Get(c fiber.Ctx) error {
 	id, err := uuid.Parse(c.Params("id"))
 	if err != nil {
 		return fiber.NewError(fiber.StatusUnprocessableEntity, "Invalid ID.")
@@ -67,7 +67,7 @@ func (h *customerHandler) Get(c fiber.Ctx) error {
 	})
 }
 
-func (h *customerHandler) Create(c fiber.Ctx) error {
+func (h *CustomerHandler) Create(c fiber.Ctx) error {
 	var req createRequest
 
 	if err := c.Bind().Body(&req); err != nil {
@@ -95,7 +95,7 @@ func (h *customerHandler) Create(c fiber.Ctx) error {
 	return c.JSON(Response{Data: toCustomerResponse(cust)})
 }
 
-func (h *customerHandler) SearchWithInvoiceTotals(c fiber.Ctx) error {
+func (h *CustomerHandler) SearchWithInvoiceTotals(c fiber.Ctx) error {
 	search := c.Query("search")
 	result, err := h.svc.SearchWithInvoiceTotals(c.Context(), search)
 	if err != nil {

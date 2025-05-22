@@ -16,21 +16,21 @@ import (
 	"go-nextjs-dashboard/internal/logger"
 )
 
-type invoiceHandler struct {
+type InvoiceHandler struct {
 	invSvc        *invoice.Service
 	createInvoice *app.CreateInvoice
 	logger        logger.Logger
 }
 
-func newInvoiceHandler(invSvc *invoice.Service, createInvoice *app.CreateInvoice, logger logger.Logger) *invoiceHandler {
-	return &invoiceHandler{
+func NewInvoiceHandler(invSvc *invoice.Service, createInvoice *app.CreateInvoice, logger logger.Logger) *InvoiceHandler {
+	return &InvoiceHandler{
 		invSvc:        invSvc,
 		createInvoice: createInvoice,
 		logger:        logger.With("component", "http.invoice"),
 	}
 }
 
-func (h *invoiceHandler) Get(c fiber.Ctx) error {
+func (h *InvoiceHandler) Get(c fiber.Ctx) error {
 	id, err := uuid.Parse(c.Params("id"))
 	if err != nil {
 		return fiber.NewError(fiber.StatusUnprocessableEntity, "invalid id.")
@@ -51,7 +51,7 @@ func (h *invoiceHandler) Get(c fiber.Ctx) error {
 	)
 }
 
-func (h *invoiceHandler) GetLatest(c fiber.Ctx) error {
+func (h *InvoiceHandler) GetLatest(c fiber.Ctx) error {
 	invs, err := h.invSvc.ListWithCustomerInfo(c.Context(), listing.SortLatest)
 	if err != nil {
 		return fmt.Errorf("list invoices: %w", err)
@@ -62,7 +62,7 @@ func (h *invoiceHandler) GetLatest(c fiber.Ctx) error {
 	)
 }
 
-func (h *invoiceHandler) Search(c fiber.Ctx) error {
+func (h *InvoiceHandler) Search(c fiber.Ctx) error {
 	size := getDefaultNum(c.Query("size"), 10)
 	page := getDefaultNum(c.Query("page"), 1)
 
@@ -83,7 +83,7 @@ func (h *invoiceHandler) Search(c fiber.Ctx) error {
 	)
 }
 
-func (h *invoiceHandler) Create(c fiber.Ctx) error {
+func (h *InvoiceHandler) Create(c fiber.Ctx) error {
 	var req request.CreateInvoice
 
 	if err := c.Bind().Body(&req); err != nil {
@@ -96,7 +96,7 @@ func (h *invoiceHandler) Create(c fiber.Ctx) error {
 
 	reqInv, err := req.ToDTO()
 	if err != nil {
-		return err
+		return fmt.Errorf("create invoice to dto: %w", err)
 	}
 
 	inv, err := h.createInvoice.Execute(c.Context(), reqInv)
@@ -114,7 +114,7 @@ func (h *invoiceHandler) Create(c fiber.Ctx) error {
 	)
 }
 
-func (h *invoiceHandler) Update(c fiber.Ctx) error {
+func (h *InvoiceHandler) Update(c fiber.Ctx) error {
 	id, err := uuid.Parse(c.Params("id"))
 	if err != nil {
 		return fiber.NewError(fiber.StatusUnprocessableEntity, "invalid id.")
@@ -149,7 +149,7 @@ func (h *invoiceHandler) Update(c fiber.Ctx) error {
 	)
 }
 
-func (h *invoiceHandler) Delete(c fiber.Ctx) error {
+func (h *InvoiceHandler) Delete(c fiber.Ctx) error {
 	id, err := uuid.Parse(c.Params("id"))
 	if err != nil {
 		return fiber.NewError(fiber.StatusUnprocessableEntity, "invalid id.")

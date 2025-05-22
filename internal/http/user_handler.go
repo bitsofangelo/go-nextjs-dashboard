@@ -11,19 +11,19 @@ import (
 	"go-nextjs-dashboard/internal/user"
 )
 
-type userHandler struct {
+type UserHandler struct {
 	svc    *user.Service
 	logger logger.Logger
 }
 
-func newUserHandler(svc *user.Service, log logger.Logger) *userHandler {
-	return &userHandler{
+func NewUserHandler(svc *user.Service, log logger.Logger) *UserHandler {
+	return &UserHandler{
 		svc:    svc,
 		logger: log.With("component", "http.user"),
 	}
 }
 
-func (h *userHandler) GetByEmail(c fiber.Ctx) error {
+func (h *UserHandler) GetByEmail(c fiber.Ctx) error {
 	email := c.Params("email")
 
 	u, err := h.svc.GetByEmail(c.Context(), email)

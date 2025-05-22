@@ -1,6 +1,8 @@
 package logger
 
-import "context"
+import (
+	"context"
+)
 
 type Logger interface {
 	With(args ...any) Logger
@@ -12,4 +14,5 @@ type Logger interface {
 	InfoContext(ctx context.Context, msg string, args ...any)
 	WarnContext(ctx context.Context, msg string, args ...any)
 	ErrorContext(ctx context.Context, msg string, args ...any)
+	Close() error
 }

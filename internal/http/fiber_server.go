@@ -1,0 +1,97 @@
+package http
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"time"
+
+	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/cors"
+	"github.com/gofiber/fiber/v3/middleware/limiter"
+	"github.com/gofiber/fiber/v3/middleware/recover"
+
+	"go-nextjs-dashboard/internal/config"
+	"go-nextjs-dashboard/internal/http/response"
+	"go-nextjs-dashboard/internal/logger"
+)
+
+type FiberServer struct {
+	cfg *config.Config
+	app *fiber.App
+}
+
+func NewFiberServer(
+	cfg *config.Config,
+	logger logger.Logger,
+) *FiberServer {
+	app := fiber.New(fiber.Config{
+		ErrorHandler: errHandler(cfg, logger),
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 15 * time.Second,
+		IdleTimeout:  60 * time.Second,
+	})
+
+	// global middlewares
+	// app.Use(logger.New())
+	app.Use(RequestID())
+	app.Use(cors.New(cors.Config{}))
+	app.Use(limiter.New(limiter.Config{Max: 60}))
+	app.Use(ValidationResponse())
+	app.Use(recover.New(recover.Config{}))
+
+	return &FiberServer{cfg, app}
+}
+
+func (f *FiberServer) ListenAndServe() error {
+	if err := f.app.Listen(":" + f.cfg.AppPort); err != nil {
+		return fmt.Errorf("fiber listen: %w", err)
+	}
+	return nil
+}
+
+func (f *FiberServer) Shutdown(ctx context.Context) error {
+	if err := f.app.ShutdownWithContext(ctx); err != nil {
+		return fmt.Errorf("fiber shutdown: %w", err)
+	}
+	return nil
+}
+
+func errHandler(cfg *config.Config, logger logger.Logger) fiber.ErrorHandler {
+	return func(c fiber.Ctx, err error) error {
+		code := fiber.StatusInternalServerError
+		message := "Internal Server AppError"
+
+		var e *response.AppError
+		var fe *fiber.Error
+
+		switch {
+		case errors.As(err, &e):
+			code = e.Code
+			message = e.Message
+		case errors.As(err, &fe) && fe.Code != code:
+			code = fe.Code
+			message = fe.Message
+		}
+
+		if code >= fiber.StatusInternalServerError {
+			var lKey = "http"
+			if loggerKey, ok := c.Context().Value("logger_key").(string); ok {
+				lKey = loggerKey
+			}
+			logger.With("component", lKey).ErrorContext(c.Context(), message, "error", err.Error())
+		}
+
+		var resp struct {
+			Message string `json:"message"`
+			Error   string `json:"error,omitempty"`
+		}
+		resp.Message = message
+
+		if cfg.AppDebug {
+			resp.Error = err.Error()
+		}
+
+		return c.Status(code).JSON(resp)
+	}
+}

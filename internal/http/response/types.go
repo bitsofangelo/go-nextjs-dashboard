@@ -1,6 +1,9 @@
 package response
 
 import (
+	"fmt"
+	"net/http"
+
 	"go-nextjs-dashboard/internal/listing"
 )
 
@@ -14,7 +17,7 @@ func New[T any](data T) Response[T] {
 	}
 }
 
-type PaginatedResponse[T any] struct {
+type Paginated[T any] struct {
 	Total       int64 `json:"total"`
 	CurrentPage int   `json:"current_page"`
 	PerPage     int   `json:"per_page"`
@@ -23,14 +26,14 @@ type PaginatedResponse[T any] struct {
 	Data        []T   `json:"data"`
 }
 
-// PaginateList converts a listing.Result[S] to PaginatedResponse[R]
-func PaginateList[S, R any](res listing.Result[S], mapper func(S) R) *PaginatedResponse[R] {
+// PaginateList converts a listing.Result[S] to Paginated[R]
+func PaginateList[S, R any](res listing.Result[S], mapper func(S) R) Paginated[R] {
 	data := make([]R, len(res.Items))
 	for i, v := range res.Items {
 		data[i] = mapper(v)
 	}
 
-	return &PaginatedResponse[R]{
+	return Paginated[R]{
 		Total:       res.Total,
 		CurrentPage: res.Page,
 		PerPage:     res.PerPage,
@@ -40,9 +43,39 @@ func PaginateList[S, R any](res listing.Result[S], mapper func(S) R) *PaginatedR
 	}
 }
 
-type Error struct {
-	Message string `json:"message"`
-	Error   string `json:"error,omitempty"`
+type AppError struct {
+	Message string
+	Code    int
+	Err     error
+}
+
+func NewError(message string, code int, errs ...error) *AppError {
+	if code == 0 {
+		code = http.StatusInternalServerError
+	}
+	if message == "" {
+		message = http.StatusText(code)
+	}
+	var err error
+	if len(errs) > 0 {
+		err = errs[0]
+	}
+	return &AppError{
+		Message: message,
+		Code:    code,
+		Err:     err,
+	}
+}
+
+func (e *AppError) Error() string {
+	if e.Err != nil {
+		return fmt.Sprintf("%s: %s", e.Message, e.Err.Error())
+	}
+	return e.Message
+}
+
+func (e *AppError) Unwrap() error {
+	return e.Err
 }
 
 type ValidationError struct {

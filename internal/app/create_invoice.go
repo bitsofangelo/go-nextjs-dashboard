@@ -43,7 +43,6 @@ func (c *CreateInvoice) Execute(ctx context.Context, i invoice.Invoice) (*invoic
 		if err != nil {
 			return fmt.Errorf("create invoice: %w", err)
 		}
-
 		return nil
 	})
 

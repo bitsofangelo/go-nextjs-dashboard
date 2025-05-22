@@ -9,19 +9,19 @@ import (
 	"go-nextjs-dashboard/internal/logger"
 )
 
-type dashboardHandler struct {
+type DashboardHandler struct {
 	svc    *dashboard.Service
 	logger logger.Logger
 }
 
-func newDashboardHandler(svc *dashboard.Service, log logger.Logger) *dashboardHandler {
-	return &dashboardHandler{
+func NewDashboardHandler(svc *dashboard.Service, log logger.Logger) *DashboardHandler {
+	return &DashboardHandler{
 		svc:    svc,
 		logger: log.With("component", "http.dashboard"),
 	}
 }
 
-func (h *dashboardHandler) GetOverview(c fiber.Ctx) error {
+func (h *DashboardHandler) GetOverview(c fiber.Ctx) error {
 	o, err := h.svc.GetOverview(c.Context())
 	if err != nil {
 		return fmt.Errorf("get overview: %w", err)

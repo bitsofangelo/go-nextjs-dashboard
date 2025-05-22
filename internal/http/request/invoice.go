@@ -2,11 +2,12 @@ package request
 
 import (
 	"context"
+	"net/http"
 	"time"
 
-	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
 
+	"go-nextjs-dashboard/internal/http/response"
 	"go-nextjs-dashboard/internal/http/validation"
 	"go-nextjs-dashboard/internal/invoice"
 	"go-nextjs-dashboard/internal/optional"
@@ -15,7 +16,7 @@ import (
 var validator = validation.Validator
 
 type CreateInvoice struct {
-	CustomerID string    `json:"customer_id" validate:"required,uuid4"`
+	CustomerID string    `json:"customer_id" validate:"required"`
 	Amount     float64   `json:"amount" validate:"required"`
 	Status     string    `json:"status" validate:"required"`
 	Date       time.Time `json:"date" validate:"required"`
@@ -28,7 +29,7 @@ func (req *CreateInvoice) Validate(ctx context.Context) error {
 func (req *CreateInvoice) ToDTO() (invoice.Invoice, error) {
 	custID, err := uuid.Parse(req.CustomerID)
 	if err != nil {
-		return invoice.Invoice{}, fiber.NewError(fiber.StatusUnprocessableEntity, "invalid customer id.")
+		return invoice.Invoice{}, response.NewError("invalid customer id", http.StatusUnprocessableEntity, err)
 	}
 
 	return invoice.Invoice{
@@ -53,12 +54,12 @@ func (req *UpdateInvoice) Validate(ctx context.Context) error {
 func (req *UpdateInvoice) ToDTO() (*invoice.UpdateInput, error) {
 	customerID, err := optional.StringToUUID(req.CustomerID)
 	if err != nil {
-		return nil, fiber.NewError(fiber.StatusUnprocessableEntity, "invalid customer id.")
+		return nil, response.NewError("invalid customer id", http.StatusUnprocessableEntity, err)
 	}
 
 	date, err := time.Parse(time.RFC3339, req.Date)
 	if err != nil {
-		return nil, fiber.NewError(fiber.StatusUnprocessableEntity, "invalid date.")
+		return nil, response.NewError("invalid date", http.StatusUnprocessableEntity, err)
 	}
 
 	return &invoice.UpdateInput{
