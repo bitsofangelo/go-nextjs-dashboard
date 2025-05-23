@@ -11,7 +11,7 @@ import (
 )
 
 type Server interface {
-	ListenAndServe() error
+	Serve() error
 	Shutdown(ctx context.Context) error
 }
 
@@ -42,7 +42,7 @@ func (a *App) Run() error {
 	srvErr := make(chan error)
 
 	go func() {
-		if err := a.server.ListenAndServe(); err != nil {
+		if err := a.server.Serve(); err != nil {
 			srvErr <- fmt.Errorf("start server: %w", err)
 		}
 	}()

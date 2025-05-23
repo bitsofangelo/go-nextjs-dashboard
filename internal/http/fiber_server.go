@@ -26,7 +26,7 @@ func NewFiberServer(
 	logger logger.Logger,
 ) *FiberServer {
 	app := fiber.New(fiber.Config{
-		ErrorHandler: errHandler(cfg, logger),
+		ErrorHandler: fiberErrHandler(cfg, logger),
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  60 * time.Second,
@@ -43,7 +43,7 @@ func NewFiberServer(
 	return &FiberServer{cfg, app}
 }
 
-func (f *FiberServer) ListenAndServe() error {
+func (f *FiberServer) Serve() error {
 	if err := f.app.Listen(":" + f.cfg.AppPort); err != nil {
 		return fmt.Errorf("fiber listen: %w", err)
 	}
@@ -57,7 +57,7 @@ func (f *FiberServer) Shutdown(ctx context.Context) error {
 	return nil
 }
 
-func errHandler(cfg *config.Config, logger logger.Logger) fiber.ErrorHandler {
+func fiberErrHandler(cfg *config.Config, logger logger.Logger) fiber.ErrorHandler {
 	return func(c fiber.Ctx, err error) error {
 		code := fiber.StatusInternalServerError
 		message := "Internal Server AppError"
