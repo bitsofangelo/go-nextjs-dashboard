@@ -16,10 +16,10 @@ type Store interface {
 	Exists(ctx context.Context, id uuid.UUID) (bool, error)
 	ExistsByEmail(ctx context.Context, email string) (bool, error)
 	Insert(ctx context.Context, c Customer) (*Customer, error)
-	SearchWithInvoiceTotals(ctx context.Context, search string) ([]WithInvoiceTotals, error)
+	SearchWithInvoiceTotals(ctx context.Context, search string) ([]WithInvoiceInfo, error)
 }
 
-type WithInvoiceTotals struct {
+type WithInvoiceInfo struct {
 	ID            uuid.UUID
 	Name          string
 	Email         string

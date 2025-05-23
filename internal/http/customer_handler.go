@@ -1,7 +1,6 @@
 package http
 
 import (
-	"context"
 	"errors"
 	"fmt"
 
@@ -9,7 +8,8 @@ import (
 	"github.com/google/uuid"
 
 	"go-nextjs-dashboard/internal/customer"
-	"go-nextjs-dashboard/internal/http/validation"
+	"go-nextjs-dashboard/internal/http/request"
+	"go-nextjs-dashboard/internal/http/response"
 	"go-nextjs-dashboard/internal/logger"
 )
 
@@ -30,26 +30,21 @@ func (h *CustomerHandler) List(c fiber.Ctx) error {
 	if err != nil {
 		switch {
 		case errors.Is(err, customer.ErrCustomerNotFound):
-			return fiber.NewError(fiber.StatusNotFound, "Customer not found.")
+			return fiber.NewError(fiber.StatusNotFound, "customer not found.")
 		default:
 			return fmt.Errorf("retrieve customer: %w", err)
 		}
 	}
 
-	rs := make([]customerResponse, len(customers))
-	for i, cust := range customers {
-		rs[i] = toCustomerResponse(&cust)
-	}
-
-	return c.JSON(Response{
-		Data: rs,
-	})
+	return c.JSON(
+		response.New(response.ToCustomers(customers)),
+	)
 }
 
 func (h *CustomerHandler) Get(c fiber.Ctx) error {
 	id, err := uuid.Parse(c.Params("id"))
 	if err != nil {
-		return fiber.NewError(fiber.StatusUnprocessableEntity, "Invalid ID.")
+		return fiber.NewError(fiber.StatusUnprocessableEntity, "invalid id.")
 	}
 
 	cust, err := h.svc.GetByID(c.Context(), id)
@@ -62,13 +57,13 @@ func (h *CustomerHandler) Get(c fiber.Ctx) error {
 		}
 	}
 
-	return c.JSON(Response{
-		Data: toCustomerResponse(cust),
-	})
+	return c.JSON(
+		response.New(response.ToCustomer(*cust)),
+	)
 }
 
 func (h *CustomerHandler) Create(c fiber.Ctx) error {
-	var req createRequest
+	var req request.CreateCustomer
 
 	if err := c.Bind().Body(&req); err != nil {
 		return fmt.Errorf("creaate customer bind request body: %w", err)
@@ -78,99 +73,31 @@ func (h *CustomerHandler) Create(c fiber.Ctx) error {
 		return fmt.Errorf("customer create request validation: %w", err)
 	}
 
-	reqCust := req.toCustomer()
+	reqCust := req.ToCustomer()
 
-	cust, err := h.svc.Create(c.Context(), *reqCust)
-
+	cust, err := h.svc.Create(c.Context(), reqCust)
 	if err != nil {
 		switch {
 		case errors.Is(err, customer.ErrEmailAlreadyTaken):
-			h.logger.ErrorContext(c.Context(), "email already taken")
-			return fiber.NewError(fiber.StatusConflict, "Email already taken.")
+			return fiber.NewError(fiber.StatusConflict, "email already taken.")
 		default:
-			return fiber.NewError(fiber.StatusInternalServerError, fmt.Sprintf("create customer: %s", err))
+			return fmt.Errorf("create customer: %w", err)
 		}
 	}
 
-	return c.JSON(Response{Data: toCustomerResponse(cust)})
+	return c.JSON(
+		response.New(response.ToCustomer(*cust)),
+	)
 }
 
-func (h *CustomerHandler) SearchWithInvoiceTotals(c fiber.Ctx) error {
+func (h *CustomerHandler) SearchWithInvoiceInfo(c fiber.Ctx) error {
 	search := c.Query("search")
-	result, err := h.svc.SearchWithInvoiceTotals(c.Context(), search)
+	result, err := h.svc.SearchWithInvoiceInfo(c.Context(), search)
 	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, fmt.Sprintf("retrieve customer: %s", err))
+		return fmt.Errorf("search customer with invoice info: %w", err)
 	}
 
-	return c.JSON(Response{
-		Data: toResponseWithInvoicesTotals(result),
-	})
-}
-
-type customerResponse struct {
-	ID       uuid.UUID `json:"id"`
-	Name     string    `json:"name"`
-	Email    string    `json:"email"`
-	ImageURL *string   `json:"image_url"`
-}
-
-func toCustomerResponse(customer *customer.Customer) customerResponse {
-	return customerResponse{
-		ID:       customer.ID,
-		Name:     customer.Name,
-		Email:    customer.Email,
-		ImageURL: customer.ImageURL,
-	}
-}
-
-type createRequest struct {
-	Name     string  `json:"name" validate:"required"`
-	Email    string  `json:"email" validate:"required,email"`
-	ImageURL *string `json:"image_url"`
-}
-
-func (req *createRequest) Validate(ctx context.Context) error {
-	if err := validation.Validator.StructCtx(ctx, req); err != nil {
-		return fmt.Errorf("validate createRequest: %w", err)
-	}
-
-	return nil
-}
-
-func (req *createRequest) toCustomer() *customer.Customer {
-	return &customer.Customer{
-		Name:     req.Name,
-		Email:    req.Email,
-		ImageURL: req.ImageURL,
-	}
-}
-
-type withInvoiceTotalsResponse struct {
-	ID            uuid.UUID `json:"id"`
-	Name          string    `json:"name"`
-	Email         string    `json:"email"`
-	ImageURL      *string   `json:"image_url"`
-	TotalInvoices int64     `json:"total_invoices"`
-	TotalPending  float64   `json:"total_pending"`
-	TotalPaid     float64   `json:"total_paid"`
-}
-
-func toResponseWithInvoiceTotals(it customer.WithInvoiceTotals) withInvoiceTotalsResponse {
-	return withInvoiceTotalsResponse{
-		ID:            it.ID,
-		Name:          it.Name,
-		Email:         it.Email,
-		ImageURL:      it.ImageURL,
-		TotalInvoices: it.TotalInvoices,
-		TotalPending:  it.TotalPending,
-		TotalPaid:     it.TotalPaid,
-	}
-}
-
-func toResponseWithInvoicesTotals(its []customer.WithInvoiceTotals) []withInvoiceTotalsResponse {
-	rs := make([]withInvoiceTotalsResponse, len(its))
-	for i, it := range its {
-		rs[i] = toResponseWithInvoiceTotals(it)
-	}
-	return rs
+	return c.JSON(
+		response.New(response.ToCustomerWithInvoiceInfoList(result)),
+	)
 }

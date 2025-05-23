@@ -10,7 +10,7 @@ import (
 	"github.com/go-playground/locales/en"
 	"github.com/go-playground/locales/fr"
 	ut "github.com/go-playground/universal-translator"
-	govalidator "github.com/go-playground/validator/v10"
+	gpvalidator "github.com/go-playground/validator/v10"
 	enTrans "github.com/go-playground/validator/v10/translations/en"
 	frTrans "github.com/go-playground/validator/v10/translations/fr"
 
@@ -18,14 +18,14 @@ import (
 )
 
 var (
-	Validator *govalidator.Validate
+	Validator *gpvalidator.Validate
 	Uni       *ut.UniversalTranslator
 )
 
 func init() {
-	Validator = govalidator.New()
+	Validator = gpvalidator.New()
 
-	// Registers a function to get alternate JSON names
+	// registers a function to get alternate JSON names
 	Validator.RegisterTagNameFunc(func(fld reflect.StructField) string {
 		name := strings.SplitN(fld.Tag.Get("json"), ",", 2)[0]
 		if name == "" || name == "-" {
@@ -34,7 +34,7 @@ func init() {
 		return name
 	})
 
-	// Setup translations
+	// setup translations
 	enLocale := en.New()
 	frLocale := fr.New()
 	Uni = ut.New(enLocale, enLocale, frLocale)
@@ -62,7 +62,7 @@ func init() {
 		func(ut ut.Translator) error {
 			return ut.Add("rfc3339", "{0} must be a valid RFC-3339 date-time", true)
 		},
-		func(ut ut.Translator, fe govalidator.FieldError) string {
+		func(ut ut.Translator, fe gpvalidator.FieldError) string {
 			t, _ := ut.T("rfc3339", fe.Field())
 			return t
 		},
@@ -72,7 +72,7 @@ func init() {
 	}
 }
 
-func registerOptionalType[T comparable]() {
+func registerOptionalType[T any]() {
 	Validator.RegisterCustomTypeFunc(func(field reflect.Value) interface{} {
 		o, ok := field.Interface().(optional.Optional[T])
 

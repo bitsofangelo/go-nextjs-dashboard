@@ -26,7 +26,7 @@ func (req *CreateInvoice) Validate(ctx context.Context) error {
 	return validator.StructCtx(ctx, req)
 }
 
-func (req *CreateInvoice) ToDTO() (invoice.Invoice, error) {
+func (req *CreateInvoice) ToInvoice() (invoice.Invoice, error) {
 	custID, err := uuid.Parse(req.CustomerID)
 	if err != nil {
 		return invoice.Invoice{}, response.NewError("invalid customer id", http.StatusUnprocessableEntity, err)

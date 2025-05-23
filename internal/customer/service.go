@@ -77,7 +77,7 @@ func (s *Service) Create(ctx context.Context, c Customer) (*Customer, error) {
 	return cust, nil
 }
 
-func (s *Service) SearchWithInvoiceTotals(ctx context.Context, search string) ([]WithInvoiceTotals, error) {
+func (s *Service) SearchWithInvoiceInfo(ctx context.Context, search string) ([]WithInvoiceInfo, error) {
 	result, err := s.store.SearchWithInvoiceTotals(ctx, search)
 	if err != nil {
 		return nil, fmt.Errorf("search with invoice totals: %w", err)

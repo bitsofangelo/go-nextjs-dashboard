@@ -22,7 +22,7 @@ func SetupFiberRoutes(
 	cg := r.Group("/customers", loggerKeyMiddleware("http.customer"))
 	{
 		cg.Get("/", custH.List)
-		cg.Get("/filtered", custH.SearchWithInvoiceTotals)
+		cg.Get("/filtered", custH.SearchWithInvoiceInfo)
 		cg.Get("/:id", custH.Get)
 		cg.Post("/", custH.Create, rateLimiter(30))
 	}

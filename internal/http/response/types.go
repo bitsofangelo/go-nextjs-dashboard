@@ -43,6 +43,14 @@ func PaginateList[S, R any](res listing.Result[S], mapper func(S) R) Paginated[R
 	}
 }
 
+func ToList[S, D any](data []S, mapper func(S) D) []D {
+	res := make([]D, len(data))
+	for i, v := range data {
+		res[i] = mapper(v)
+	}
+	return res
+}
+
 type AppError struct {
 	Message string
 	Code    int

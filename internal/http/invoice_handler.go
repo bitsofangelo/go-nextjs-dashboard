@@ -94,7 +94,7 @@ func (h *InvoiceHandler) Create(c fiber.Ctx) error {
 		return fmt.Errorf("create invoice validation: %w", err)
 	}
 
-	reqInv, err := req.ToDTO()
+	reqInv, err := req.ToInvoice()
 	if err != nil {
 		return fmt.Errorf("create invoice to dto: %w", err)
 	}

@@ -140,8 +140,8 @@ func (s *GormStore) Insert(ctx context.Context, c Customer) (*Customer, error) {
 	return &c, nil
 }
 
-func (s *GormStore) SearchWithInvoiceTotals(ctx context.Context, search string) ([]WithInvoiceTotals, error) {
-	var out []WithInvoiceTotals
+func (s *GormStore) SearchWithInvoiceTotals(ctx context.Context, search string) ([]WithInvoiceInfo, error) {
+	var out []WithInvoiceInfo
 
 	start := time.Now()
 
