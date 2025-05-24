@@ -53,8 +53,8 @@ func (o Optional[T]) Value() (driver.Value, error) {
 
 	v := any(o.Val)
 
-	if u, ok := v.(uuid.UUID); ok {
-		return u.String(), nil
+	if u, ok := v.(driver.Valuer); ok {
+		return u.Value()
 	}
 
 	if dv, ok := v.(driver.Value); ok {
@@ -76,22 +76,18 @@ func (o *Optional[T]) Scan(src any) error {
 	o.IsPresent = true
 	if src == nil {
 		o.IsNull = true
-		fmt.Println("here")
 		var zero T
 		o.Val = zero
 		return nil
 	}
 	o.IsNull = false
 
-	var tmp T
-
 	// If T itself implements sql.Scanner, use that:
-	if scanner, ok := any(&tmp).(sql.Scanner); ok {
+	if scanner, ok := any(&o.Val).(sql.Scanner); ok {
 		err := scanner.Scan(src)
 		if err != nil {
 			return fmt.Errorf("optional scan: %w", err)
 		}
-		o.Val = tmp
 		return nil
 	}
 
@@ -102,17 +98,17 @@ func (o *Optional[T]) Scan(src any) error {
 	}
 
 	// Handle boolean
-	if _, ok := any(tmp).(bool); ok {
+	if _, ok := any(o.Val).(bool); ok {
 		switch v := src.(type) {
 		case int64:
 			o.Val = any(v != 0).(T)
 			return nil
-		case []byte:
-			o.Val = any(string(v) == "1").(T)
-			return nil
-		case string:
-			o.Val = any(v == "1").(T)
-			return nil
+			// case []byte:
+			// 	o.Val = any(string(v) == "1").(T)
+			// 	return nil
+			// case string:
+			// 	o.Val = any(v == "1").(T)
+			// 	return nil
 		}
 	}
 
@@ -133,17 +129,6 @@ func (o *Optional[T]) Scan(src any) error {
 		"cannot scan %T into Optional[%s]",
 		src, reflect.TypeOf(o.Val).Name(),
 	)
-}
-
-func (o Optional[T]) IsZero() bool {
-	return !o.IsPresent
-}
-
-func (o *Optional[T]) Ptr() *T {
-	if o.IsPresent && !o.IsNull {
-		return &o.Val
-	}
-	return nil
 }
 
 func Of[T any](v T) Optional[T] {
@@ -169,30 +154,49 @@ func FromPtr[T any](v *T) Optional[T] {
 	}
 }
 
-func StringToUUID(o Optional[string]) (Optional[uuid.UUID], error) {
+func StringToUUID[T ~string | ~*string](o Optional[T]) (Optional[uuid.UUID], error) {
 	if !o.IsPresent {
 		return Optional[uuid.UUID]{}, nil
 	}
 	if o.IsNull {
 		return Optional[uuid.UUID]{IsPresent: true, IsNull: true}, nil
 	}
-	u, err := uuid.Parse(o.Val)
+
+	var str string
+	switch v := any(o.Val).(type) {
+	case string:
+		str = v
+	case *string:
+		str = *v
+	}
+
+	u, err := uuid.Parse(str)
 	if err != nil {
 		return Optional[uuid.UUID]{}, fmt.Errorf("cannot parse %s as UUID: %w", o.Val, err)
 	}
 	return Optional[uuid.UUID]{Val: u, IsPresent: true}, nil
 }
 
-func StringToTime(o Optional[string], layout string) (Optional[time.Time], error) {
+func StringToTime[T ~string | ~*string](o Optional[T], layout string) (Optional[time.Time], error) {
 	if !o.IsPresent {
 		return Optional[time.Time]{}, nil
 	}
 	if o.IsNull {
 		return Optional[time.Time]{IsPresent: true, IsNull: true}, nil
 	}
-	t, err := time.Parse(layout, o.Val)
-	if err != nil {
-		return Optional[time.Time]{}, fmt.Errorf("cannot parse %v as time: %w", o.Val, err)
+
+	var str string
+	switch v := any(o.Val).(type) {
+	case string:
+		str = v
+	case *string:
+		str = *v
 	}
+
+	t, err := time.Parse(layout, str)
+	if err != nil {
+		return Optional[time.Time]{}, fmt.Errorf("cannot parse %s as Time: %w", o.Val, err)
+	}
+
 	return Optional[time.Time]{Val: t, IsPresent: true}, nil
 }

@@ -2,7 +2,6 @@ package request
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -42,12 +41,11 @@ func (req *CreateInvoice) ToInvoice() (invoice.Invoice, error) {
 }
 
 type UpdateInvoice struct {
-	// CustomerID optional.Optional[*string] `json:"customer_id" validate:"omitempty,required,uuid4"`
-	Amount float64 `json:"amount" validate:"min=0,max=100"`
-	Status string  `json:"status" validate:"required"`
-	// Date       optional.Optional[string]  `json:"date" validate:"omitempty,rfc3339"`
-	Date optional.Optional[*string] `json:"date" validate:"omitnil,required"`
-	// IsActive optional.Optional[bool]   `json:"is_active" validate:"omitempty,boolean"`
+	CustomerID optional.Optional[*string] `json:"customer_id" validate:"omitnil,required,uuid4"`
+	Amount     float64                    `json:"amount" validate:"min=0,max=100"`
+	Status     string                     `json:"status" validate:"required"`
+	Date       optional.Optional[*string] `json:"date" validate:"omitnil,required,rfc3339"`
+	// IsActive optional.Optional[*bool]   `json:"is_active" validate:"omitnil,boolean"`
 }
 
 func (req *UpdateInvoice) Validate(ctx context.Context) error {
@@ -55,36 +53,30 @@ func (req *UpdateInvoice) Validate(ctx context.Context) error {
 }
 
 func (req *UpdateInvoice) ToDTO() (invoice.UpdateInput, error) {
-	// customerID, err := optional.StringToUUID(req.CustomerID)
-	// if err != nil {
-	// 	return invoice.UpdateInput{},
-	// 		response.NewError(
-	// 			"invalid customer id",
-	// 			http.StatusUnprocessableEntity,
-	// 			err,
-	// 		)
-	// }
+	customerID, err := optional.StringToUUID(req.CustomerID)
+	if err != nil {
+		return invoice.UpdateInput{},
+			response.NewError(
+				"invalid customer id",
+				http.StatusUnprocessableEntity,
+				err,
+			)
+	}
 
-	// var date optional.Optional[time.Time]
+	date, err := optional.StringToTime(req.Date, time.RFC3339)
+	if err != nil {
+		return invoice.UpdateInput{},
+			response.NewError(
+				"invalid date",
+				http.StatusUnprocessableEntity,
+				err,
+			)
+	}
 
-	// if req.Date != nil {
-	// date, err = optional.StringToTime(req.Date, time.RFC3339)
-	// if err != nil {
-	// 	return invoice.UpdateInput{},
-	// 		response.NewError(
-	// 			"invalid date",
-	// 			http.StatusUnprocessableEntity,
-	// 			err,
-	// 		)
-	// 	// }
-	// }
-
-	// return invoice.UpdateInput{
-	// 	CustomerID: customerID,
-	// 	Amount:     req.Amount,
-	// 	Status:     req.Status,
-	// 	Date:       date,
-	// 	IsActive:   req.IsActive,
-	// }, nil
-	return invoice.UpdateInput{}, fmt.Errorf("not implemented")
+	return invoice.UpdateInput{
+		CustomerID: customerID,
+		Amount:     req.Amount,
+		Status:     req.Status,
+		Date:       date,
+	}, nil
 }

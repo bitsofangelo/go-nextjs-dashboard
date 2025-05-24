@@ -51,11 +51,11 @@ func toModel(i Invoice) invoiceModel {
 func toEntity(i invoiceModel) Invoice {
 	return Invoice{
 		ID:         i.ID,
-		CustomerID: i.CustomerID.Ptr(),
+		CustomerID: &i.CustomerID.Val,
 		Amount:     i.Amount,
 		Status:     i.Status,
 		Date:       i.Date,
-		IsActive:   i.IsActive.Ptr(),
+		IsActive:   &i.IsActive.Val,
 	}
 }
 
