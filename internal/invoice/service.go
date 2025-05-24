@@ -38,11 +38,11 @@ func (s *Service) ListWithCustomerInfo(ctx context.Context, sort listing.SortOrd
 }
 
 func (s *Service) Search(ctx context.Context, req SearchFilter, page listing.Page) (listing.Result[Invoice], error) {
-	res, err := s.store.Search(ctx, req, page)
+	invs, total, err := s.store.Search(ctx, req, page)
 	if err != nil {
 		return listing.Result[Invoice]{}, fmt.Errorf("search invoices: %w", err)
 	}
-	return res, nil
+	return listing.NewResult(invs, page, total), nil
 }
 
 func (s *Service) Get(ctx context.Context, id uuid.UUID) (*Invoice, error) {
@@ -74,7 +74,7 @@ func (s *Service) Create(ctx context.Context, inv Invoice) (*Invoice, error) {
 	return i, nil
 }
 
-func (s *Service) Update(ctx context.Context, id uuid.UUID, req *UpdateInput) (*Invoice, error) {
+func (s *Service) Update(ctx context.Context, id uuid.UUID, req UpdateInput) (*Invoice, error) {
 	exists, err := s.Exists(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("exists invoice: %w", err)

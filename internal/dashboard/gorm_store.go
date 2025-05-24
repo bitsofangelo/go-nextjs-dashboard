@@ -9,9 +9,19 @@ import (
 	"gorm.io/gorm"
 
 	"go-nextjs-dashboard/internal/customer"
+	"go-nextjs-dashboard/internal/db"
 	"go-nextjs-dashboard/internal/invoice"
 	"go-nextjs-dashboard/internal/logger"
 )
+
+type revenueModel struct {
+	Month   string
+	Revenue float64
+}
+
+func (m *revenueModel) TableName() string {
+	return "revenues"
+}
 
 type GormStore struct {
 	db     *gorm.DB
@@ -27,7 +37,14 @@ func NewStore(db *gorm.DB, logger logger.Logger) *GormStore {
 	}
 }
 
-func (s GormStore) GetOverview(ctx context.Context) (*Overview, error) {
+func (s *GormStore) DB(ctx context.Context) *gorm.DB {
+	if gormDB, ok := db.FromCtx(ctx); ok {
+		return gormDB.WithContext(ctx)
+	}
+	return s.db.WithContext(ctx)
+}
+
+func (s *GormStore) GetOverview(ctx context.Context) (*Overview, error) {
 	var (
 		invoiceCount  int64
 		customerCount int64
@@ -39,21 +56,21 @@ func (s GormStore) GetOverview(ctx context.Context) (*Overview, error) {
 	start := time.Now()
 
 	g.Go(func() error {
-		if err := s.db.WithContext(egCtx).Model(&invoice.Invoice{}).Count(&invoiceCount).Error; err != nil {
+		if err := s.DB(egCtx).Model(&invoice.Invoice{}).Count(&invoiceCount).Error; err != nil {
 			return fmt.Errorf("query invoice count: %w", err)
 		}
 		return nil
 	})
 
 	g.Go(func() error {
-		if err := s.db.WithContext(egCtx).Model(&customer.Customer{}).Count(&customerCount).Error; err != nil {
+		if err := s.DB(egCtx).Model(&customer.Customer{}).Count(&customerCount).Error; err != nil {
 			return fmt.Errorf("query customer count: %w", err)
 		}
 		return nil
 	})
 
 	g.Go(func() error {
-		err := s.db.WithContext(egCtx).Model(&invoice.Invoice{}).Select(`
+		err := s.DB(egCtx).Model(&invoice.Invoice{}).Select(`
 			SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END) AS "paid",
 			SUM(CASE WHEN status = 'pending' THEN amount ELSE 0 END) AS "pending"
 		`).Scan(&invoiceStatus).Error
@@ -75,4 +92,22 @@ func (s GormStore) GetOverview(ctx context.Context) (*Overview, error) {
 		CustomerCount: customerCount,
 		InvoiceStatus: invoiceStatus,
 	}, nil
+}
+
+func (s *GormStore) ListMonthlyRevenues(ctx context.Context) ([]MonthlyRevenue, error) {
+	var models []revenueModel
+
+	if err := s.DB(ctx).Find(&models).Error; err != nil {
+		return nil, fmt.Errorf("query monthly revenues: %w", err)
+	}
+
+	out := make([]MonthlyRevenue, len(models))
+	for i, v := range models {
+		out[i] = MonthlyRevenue{
+			Month:  v.Month,
+			Amount: v.Revenue,
+		}
+	}
+
+	return out, nil
 }

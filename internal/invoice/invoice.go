@@ -12,4 +12,5 @@ type Invoice struct {
 	Amount     float64
 	Status     string
 	Date       time.Time
+	IsActive   *bool
 }

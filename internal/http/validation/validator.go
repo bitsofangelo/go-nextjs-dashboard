@@ -23,7 +23,7 @@ var (
 )
 
 func init() {
-	Validator = gpvalidator.New()
+	Validator = gpvalidator.New(gpvalidator.WithRequiredStructEnabled())
 
 	// registers a function to get alternate JSON names
 	Validator.RegisterTagNameFunc(func(fld reflect.StructField) string {
@@ -68,27 +68,51 @@ func init() {
 		},
 	)
 	if err != nil {
-		return
+		log.Fatal(fmt.Errorf("register translations error: %w", err))
 	}
 }
 
 func registerOptionalType[T any]() {
+	var z T
+	t := reflect.TypeOf(z)
+
+	// Check if T is a pointer
+	if t.Kind() == reflect.Ptr {
+		log.Fatalf("registerOptionalType: type parameter T must not be a pointer, got %v\n", t)
+	}
+
 	Validator.RegisterCustomTypeFunc(func(field reflect.Value) interface{} {
 		o, ok := field.Interface().(optional.Optional[T])
 
 		if !ok {
 			return nil
 		}
-		// not in JSON ⇒ skip all validations (treat as zero)
+		// not in JSON ⇒ return nil of T
 		if !o.IsPresent {
-			return nil
+			return new(T)
 		}
 		// explicitly null ⇒ treat as zero value
 		if o.IsNull {
 			var zero T
 			return zero
 		}
+
 		// present + non-null ⇒ underlying value
-		return o.V
+		return o.Val
 	}, optional.Optional[T]{})
+
+	Validator.RegisterCustomTypeFunc(func(field reflect.Value) interface{} {
+		o, ok := field.Interface().(optional.Optional[*T])
+
+		if !ok {
+			return nil
+		}
+		// not in JSON or explicitly null ⇒ return current o.Val (which should be nil)
+		if !o.IsPresent || o.IsNull {
+			return o.Val
+		}
+
+		// present + non-null ⇒ underlying value
+		return *o.Val
+	}, optional.Optional[*T]{})
 }

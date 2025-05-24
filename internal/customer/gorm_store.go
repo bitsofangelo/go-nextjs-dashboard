@@ -15,10 +15,11 @@ import (
 )
 
 type customerModel struct {
-	ID       uuid.UUID `gorm:"type:char(36);not null;unique;primary_key"`
-	Name     string    `gorm:"type:varchar(255);not null"`
-	Email    string    `gorm:"type:varchar(255);not null;unique"`
-	ImageURL *string   `gorm:"type:varchar(255)"`
+	ID       uuid.UUID      `gorm:"type:char(36);not null;unique;primary_key"`
+	Name     string         `gorm:"type:varchar(255);not null"`
+	Email    string         `gorm:"type:varchar(255);not null;unique"`
+	ImageURL *string        `gorm:"type:varchar(255)"`
+	Test     sql.NullString `gorm:"type:varchar(255)"`
 }
 
 func (c *customerModel) BeforeCreate(*gorm.DB) (err error) {

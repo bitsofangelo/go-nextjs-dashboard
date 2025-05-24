@@ -22,6 +22,7 @@ type invoiceModel struct {
 	Amount     float64
 	Status     string
 	Date       time.Time
+	IsActive   optional.Optional[bool]
 }
 
 func (i *invoiceModel) BeforeCreate(*gorm.DB) (err error) {
@@ -43,6 +44,7 @@ func toModel(i Invoice) invoiceModel {
 		Amount:     i.Amount,
 		Status:     i.Status,
 		Date:       i.Date,
+		IsActive:   optional.FromPtr(i.IsActive),
 	}
 }
 
@@ -53,6 +55,7 @@ func toEntity(i invoiceModel) Invoice {
 		Amount:     i.Amount,
 		Status:     i.Status,
 		Date:       i.Date,
+		IsActive:   i.IsActive.Ptr(),
 	}
 }
 
@@ -103,7 +106,7 @@ func (s *GormStore) List(ctx context.Context, sort listing.SortOrder) ([]Invoice
 	return toEntities(models), nil
 }
 
-func (s *GormStore) Search(ctx context.Context, req SearchFilter, p listing.Page) (listing.Result[Invoice], error) {
+func (s *GormStore) Search(ctx context.Context, req SearchFilter, p listing.Page) ([]Invoice, int64, error) {
 	var sort string
 	switch req.Sort {
 	case listing.SortLatest:
@@ -126,15 +129,15 @@ func (s *GormStore) Search(ctx context.Context, req SearchFilter, p listing.Page
 
 	var total int64
 	if err := q.Model(&Invoice{}).Count(&total).Error; err != nil {
-		return listing.Result[Invoice]{}, fmt.Errorf("count invoices: %w", err)
+		return nil, 0, fmt.Errorf("count invoices: %w", err)
 	}
 
-	var rows []invoiceModel
-	if err := q.Scopes(p.Scope()).Find(&rows).Error; err != nil {
-		return listing.Result[Invoice]{}, fmt.Errorf("query invoices: %w", err)
+	var models []invoiceModel
+	if err := q.Scopes(p.Scope()).Find(&models).Error; err != nil {
+		return nil, 0, fmt.Errorf("query invoices: %w", err)
 	}
 
-	return listing.NewResult(toEntities(rows), p, total), nil
+	return toEntities(models), total, nil
 }
 
 func (s *GormStore) Find(ctx context.Context, id uuid.UUID) (*Invoice, error) {
@@ -174,7 +177,7 @@ func (s *GormStore) Insert(ctx context.Context, i Invoice) (*Invoice, error) {
 	return &i, nil
 }
 
-func (s *GormStore) Update(ctx context.Context, id uuid.UUID, req *UpdateInput) error {
+func (s *GormStore) Update(ctx context.Context, id uuid.UUID, req UpdateInput) error {
 	err := s.DB(ctx).
 		Model(&invoiceModel{}).
 		Where("id = ?", id).

@@ -13,7 +13,11 @@ func SetupFiberRoutes(
 	r := s.app.Group("/api")
 
 	// dashboard routes
-	r.Get("/overview", dashH.GetOverview, loggerKeyMiddleware("http.dashboard"))
+	dg := r.Group("", loggerKeyMiddleware("http.dashboard"))
+	{
+		dg.Get("/overview", dashH.GetOverview)
+		dg.Get("/revenues", dashH.GetMonthlyRevenues)
+	}
 
 	// user routes
 	r.Get("/users/email/:email", userH.GetByEmail, loggerKeyMiddleware("http.user"))
@@ -32,7 +36,6 @@ func SetupFiberRoutes(
 	{
 		ig.Get("/latest", invH.GetLatest)
 		ig.Get("/filtered", invH.Search)
-		// ig.Get("/invoices/total-pages", InvoiceHandler.GetInvoicePages)
 
 		ig.Get("/:id", invH.Get)
 		ig.Post("/", invH.Create, rateLimiter(30))

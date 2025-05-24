@@ -14,6 +14,7 @@ type Invoice struct {
 	Amount     float64    `json:"amount"`
 	Status     string     `json:"status"`
 	Date       time.Time  `json:"date"`
+	IsActive   *bool      `json:"is_active"`
 }
 
 func ToInvoice(inv invoice.Invoice) Invoice {
@@ -23,6 +24,7 @@ func ToInvoice(inv invoice.Invoice) Invoice {
 		Amount:     inv.Amount,
 		Status:     inv.Status,
 		Date:       inv.Date,
+		IsActive:   inv.IsActive,
 	}
 }
 

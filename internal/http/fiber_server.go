@@ -2,6 +2,7 @@ package http
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -60,10 +61,11 @@ func (f *FiberServer) Shutdown(ctx context.Context) error {
 func fiberErrHandler(cfg *config.Config, logger logger.Logger) fiber.ErrorHandler {
 	return func(c fiber.Ctx, err error) error {
 		code := fiber.StatusInternalServerError
-		message := "Internal Server AppError"
+		message := "Internal Server Error"
 
 		var e *response.AppError
 		var fe *fiber.Error
+		var je *json.UnmarshalTypeError
 
 		switch {
 		case errors.As(err, &e):
@@ -72,6 +74,9 @@ func fiberErrHandler(cfg *config.Config, logger logger.Logger) fiber.ErrorHandle
 		case errors.As(err, &fe) && fe.Code != code:
 			code = fe.Code
 			message = fe.Message
+		case errors.As(err, &je):
+			code = fiber.StatusUnprocessableEntity
+			message = fmt.Sprintf("%s has invalid type", je.Field)
 		}
 
 		if code >= fiber.StatusInternalServerError {
