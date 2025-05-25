@@ -45,6 +45,7 @@ type UpdateInvoice struct {
 	Amount     float64                    `json:"amount" validate:"min=0,max=100"`
 	Status     string                     `json:"status" validate:"required"`
 	Date       optional.Optional[*string] `json:"date" validate:"omitnil,required,rfc3339"`
+	// Date       attr.Optional[attr.Null[string]] `json:"date" validate:"omitnil,required,rfc3339"`
 	// IsActive optional.Optional[*bool]   `json:"is_active" validate:"omitnil,boolean"`
 }
 
