@@ -2,10 +2,11 @@ package http
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 
-	govalidator "github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/limiter"
 	"github.com/google/uuid"
@@ -26,24 +27,25 @@ func ValidationResponse() fiber.Handler {
 		err := c.Next()
 
 		if err != nil {
-			var vErrs govalidator.ValidationErrors
+			var vErrs validation.Errors
+			var jsonErr *json.UnmarshalTypeError
 
-			if errors.As(err, &vErrs) {
-				trans, found := validation.Uni.GetTranslator(c.Get("Accept-Language"))
-				if !found {
-					trans, _ = validation.Uni.GetTranslator("en")
-				}
+			switch {
+			case errors.As(err, &vErrs):
+				return c.Status(fiber.StatusUnprocessableEntity).JSON(response.ValidationError{
+					Message: "The given data was invalid.",
+					Errors:  vErrs,
+				})
 
-				out := make(map[string]string, len(vErrs))
-				for _, e := range vErrs {
-					out[e.Field()] = e.Translate(trans)
-				}
-
-				return c.Status(http.StatusUnprocessableEntity).
-					JSON(response.ValidationError{
-						Message: "The given data was invalid.",
-						Errors:  out,
-					})
+			case errors.As(err, &jsonErr):
+				return c.Status(fiber.StatusUnprocessableEntity).JSON(response.ValidationError{
+					Message: "The given data was invalid.",
+					Errors: map[string][]string{
+						jsonErr.Field: {
+							fmt.Sprintf("%s must be a of type %s", jsonErr.Field, jsonErr.Type.String()),
+						},
+					},
+				})
 			}
 		}
 
@@ -54,6 +56,7 @@ func ValidationResponse() fiber.Handler {
 type ctxKey string
 
 var reqIDKey ctxKey = "req_id"
+var reqLocale ctxKey = "req_locale"
 
 // RequestID extracts the request id from the request header or generates a new one
 func RequestID() fiber.Handler {
@@ -70,6 +73,22 @@ func RequestID() fiber.Handler {
 
 		c.Request().Header.Set(hdr, id)
 		c.Response().Header.Set(hdr, id)
+
+		return c.Next()
+	}
+}
+
+func RequestLocale() fiber.Handler {
+	return func(c fiber.Ctx) error {
+		const hdr = "Accept-Language"
+
+		l := c.Get(hdr)
+		if l == "" {
+			l = "en"
+		}
+
+		ctx := context.WithValue(c.Context(), reqLocale, l)
+		c.SetContext(ctx)
 
 		return c.Next()
 	}

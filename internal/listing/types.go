@@ -9,7 +9,7 @@ const (
 	SortLatest
 )
 
-// Page carries the client’s pagination request.
+// Page carries the page request details.
 type Page struct {
 	Page int
 	Size int

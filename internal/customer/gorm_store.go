@@ -15,11 +15,10 @@ import (
 )
 
 type customerModel struct {
-	ID       uuid.UUID      `gorm:"type:char(36);not null;unique;primary_key"`
-	Name     string         `gorm:"type:varchar(255);not null"`
-	Email    string         `gorm:"type:varchar(255);not null;unique"`
-	ImageURL *string        `gorm:"type:varchar(255)"`
-	Test     sql.NullString `gorm:"type:varchar(255)"`
+	ID       uuid.UUID `gorm:"type:char(36);not nullable;unique;primary_key"`
+	Name     string    `gorm:"type:varchar(255);not nullable"`
+	Email    string    `gorm:"type:varchar(255);not nullable;unique"`
+	ImageURL *string   `gorm:"type:varchar(255)"`
 }
 
 func (c *customerModel) BeforeCreate(*gorm.DB) (err error) {
@@ -141,7 +140,7 @@ func (s *GormStore) Insert(ctx context.Context, c Customer) (*Customer, error) {
 	return &c, nil
 }
 
-func (s *GormStore) SearchWithInvoiceTotals(ctx context.Context, search string) ([]WithInvoiceInfo, error) {
+func (s *GormStore) SearchWithInvoiceInfo(ctx context.Context, search string) ([]WithInvoiceInfo, error) {
 	var out []WithInvoiceInfo
 
 	start := time.Now()
@@ -164,10 +163,10 @@ func (s *GormStore) SearchWithInvoiceTotals(ctx context.Context, search string) 
 		Scan(&out).Error
 
 	if err != nil {
-		return nil, fmt.Errorf("invoice totals query: %w", err)
+		return nil, fmt.Errorf("customer with invoice info query: %w", err)
 	}
 
-	s.logger.DebugContext(ctx, "fetch customer with invoice", "elapsed", time.Since(start).String())
+	s.logger.DebugContext(ctx, "fetch customer with invoice info", "elapsed", time.Since(start).String())
 
 	return out, nil
 }

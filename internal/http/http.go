@@ -14,24 +14,32 @@ func ReqID(ctx context.Context) (string, bool) {
 	return v, ok
 }
 
-type NumberType interface {
-	~int | ~int8 | ~int16 | ~int32 | ~int64 | ~float32 | ~float64
+func Locale(ctx context.Context, def ...string) string {
+	if v, ok := ctx.Value(reqLocale).(string); ok {
+		return v
+	}
+
+	if len(def) > 0 {
+		return def[0]
+	}
+
+	return "en"
 }
 
-func getDefaultNum[T NumberType](value string, def T) T {
+func getDefaultNum[T any](value string, def T) T {
 	switch any(def).(type) {
 	case int, int8, int16, int32, int64:
 		i, err := strconv.Atoi(value)
 		if err != nil {
 			return def
 		}
-		return T(i)
+		return any(i).(T)
 	case float32, float64:
 		f, err := strconv.ParseFloat(value, 64)
 		if err != nil {
 			return def
 		}
-		return T(f)
+		return any(f).(T)
 	default:
 		return def
 	}

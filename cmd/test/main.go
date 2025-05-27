@@ -1,18 +1,17 @@
 package main
 
 import (
+	"errors"
 	"fmt"
-	"time"
 )
 
 type T int
 
 func main() {
-	_, err := time.Parse(time.RFC3339, "2025-05-20T12:30:05+08:00")
-	fmt.Println(err)
+	var errs []error
+	errs = append(errs, errors.New("test"))
+	errs = append(errs, errors.New("test2"))
+	errs = append(errs, errors.New("test3"))
 
-	var t *int
-	var i any
-	i = t
-	fmt.Println(i == nil)
+	fmt.Println(errors.Join(errs...))
 }

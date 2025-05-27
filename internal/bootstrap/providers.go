@@ -14,6 +14,8 @@ import (
 	"go-nextjs-dashboard/internal/event"
 	"go-nextjs-dashboard/internal/event/bus"
 	"go-nextjs-dashboard/internal/http"
+	"go-nextjs-dashboard/internal/http/validation"
+	"go-nextjs-dashboard/internal/http/validation/gp"
 	"go-nextjs-dashboard/internal/invoice"
 	"go-nextjs-dashboard/internal/logger"
 	sloglogger "go-nextjs-dashboard/internal/logger/slog"
@@ -35,9 +37,13 @@ var AppProviders = wire.NewSet(
 	wire.Bind(new(logger.Logger), new(*sloglogger.Logger)),
 
 	// EVENT
-	bus.RegisterAll,
 	event.NewBroker,
 	wire.Bind(new(event.Publisher), new(*event.Broker)),
+	bus.RegisterAll,
+
+	// VALIDATOR
+	gp.New,
+	wire.Bind(new(validation.Validator), new(*gp.Validator)),
 
 	// STORE & SERVICES
 	customer.NewStore,
@@ -77,12 +83,12 @@ var HTTPProviders = wire.NewSet(
 
 type timezoneInitializer struct{}
 
-func setTimezone(cfg *config.Config) (*timezoneInitializer, error) {
+func setTimezone(cfg *config.Config) (timezoneInitializer, error) {
 	loc, err := time.LoadLocation(cfg.AppTimezone)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load timezone: %w", err)
+		return timezoneInitializer{}, fmt.Errorf("failed to load timezone: %w", err)
 	}
 	time.Local = loc
 
-	return &timezoneInitializer{}, nil
+	return timezoneInitializer{}, nil
 }

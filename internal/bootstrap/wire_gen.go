@@ -16,6 +16,7 @@ import (
 	"go-nextjs-dashboard/internal/event"
 	"go-nextjs-dashboard/internal/event/bus"
 	"go-nextjs-dashboard/internal/http"
+	"go-nextjs-dashboard/internal/http/validation/gp"
 	"go-nextjs-dashboard/internal/invoice"
 	"go-nextjs-dashboard/internal/logger/slog"
 	"go-nextjs-dashboard/internal/user"
@@ -44,20 +45,24 @@ func InitializeApp(ctx context.Context) (*App, error) {
 	userService := user.NewService(userGormStore, logger)
 	userHandler := http.NewUserHandler(userService, logger)
 	customerGormStore := customer.NewStore(gormDB, logger)
-	v := bus.RegisterAll()
-	broker := event.NewBroker(v)
+	broker := event.NewBroker()
 	customerService := customer.NewService(customerGormStore, broker, logger)
-	customerHandler := http.NewCustomerHandler(customerService, logger)
+	validator, err := gp.New()
+	if err != nil {
+		return nil, err
+	}
+	customerHandler := http.NewCustomerHandler(customerService, validator, logger)
 	invoiceGormStore := invoice.NewStore(gormDB, logger)
 	invoiceService := invoice.NewService(invoiceGormStore, logger)
 	gormTxManager := db.NewTxManager(gormDB)
 	createInvoice := app.NewCreateInvoice(customerService, invoiceService, gormTxManager, logger)
-	invoiceHandler := http.NewInvoiceHandler(invoiceService, createInvoice, logger)
+	invoiceHandler := http.NewInvoiceHandler(invoiceService, createInvoice, validator, logger)
 	routeInitializer := http.SetupFiberRoutes(fiberServer, dashboardHandler, userHandler, customerHandler, invoiceHandler)
 	bootstrapTimezoneInitializer, err := setTimezone(configConfig)
 	if err != nil {
 		return nil, err
 	}
-	bootstrapApp := NewApp(ctx, configConfig, logger, fiberServer, routeInitializer, bootstrapTimezoneInitializer)
+	registerInitializer := bus.RegisterAll(broker, customerService, logger)
+	bootstrapApp := NewApp(ctx, configConfig, logger, fiberServer, routeInitializer, bootstrapTimezoneInitializer, registerInitializer)
 	return bootstrapApp, nil
 }

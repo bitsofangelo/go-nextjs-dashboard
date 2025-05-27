@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"go-nextjs-dashboard/internal/config"
+	"go-nextjs-dashboard/internal/event/bus"
 	"go-nextjs-dashboard/internal/http"
 	"go-nextjs-dashboard/internal/logger"
 )
@@ -27,8 +28,9 @@ func NewApp(
 	cfg *config.Config,
 	logger logger.Logger,
 	server Server,
-	_ *http.RouteInitializer,
-	_ *timezoneInitializer,
+	_ http.RouteInitializer,
+	_ timezoneInitializer,
+	_ bus.RegisterInitializer,
 ) *App {
 	return &App{
 		cfg:    cfg,

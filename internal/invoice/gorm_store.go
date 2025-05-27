@@ -21,7 +21,7 @@ type invoiceModel struct {
 	CustomerID optional.Optional[uuid.UUID]
 	Amount     float64
 	Status     string
-	Date       time.Time
+	Date       *time.Time
 	IsActive   optional.Optional[bool]
 }
 
@@ -106,7 +106,7 @@ func (s *GormStore) List(ctx context.Context, sort listing.SortOrder) ([]Invoice
 	return toEntities(models), nil
 }
 
-func (s *GormStore) Search(ctx context.Context, req SearchFilter, p listing.Page) ([]Invoice, int64, error) {
+func (s *GormStore) Search(ctx context.Context, req SearchFilter, page listing.Page) ([]Invoice, int64, error) {
 	var sort string
 	switch req.Sort {
 	case listing.SortLatest:
@@ -133,7 +133,7 @@ func (s *GormStore) Search(ctx context.Context, req SearchFilter, p listing.Page
 	}
 
 	var models []invoiceModel
-	if err := q.Scopes(p.Scope()).Find(&models).Error; err != nil {
+	if err := q.Scopes(page.Scope()).Find(&models).Error; err != nil {
 		return nil, 0, fmt.Errorf("query invoices: %w", err)
 	}
 

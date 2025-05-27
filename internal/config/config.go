@@ -2,10 +2,7 @@ package config
 
 import (
 	"fmt"
-	"log"
-	"os"
 
-	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
 )
 
@@ -33,10 +30,6 @@ type Config struct {
 	LogFormat string `mapstructure:"LOG_FORMAT"` // "text" | "json"
 	LogPath   string `mapstructure:"LOG_PATH"`
 	LogOutput string `mapstructure:"LOG_OUTPUT"` // "stdout" (default) | "./logs/app.log" | "/var/log/<app_name>/app.log
-
-	// Deprecated TODO: to be removed
-	DatabaseURL string `mapstructure:"MYSQL_URI"`
-	ServerPort  string `mapstructure:"SERVER_PORT"`
 }
 
 func Load() (*Config, error) {
@@ -69,21 +62,4 @@ func Load() (*Config, error) {
 	}
 
 	return &cfg, nil
-}
-
-// Cfg Deprecated
-// TODO: to be removed
-var Cfg Config
-
-// LoadConfig Deprecated
-// TODO: to be removed
-func LoadConfig() {
-	if err := godotenv.Load(".env"); err != nil {
-		log.Fatal(fmt.Errorf("error loading .env file: %w", err))
-	}
-
-	Cfg = Config{
-		DatabaseURL: os.Getenv("MYSQL_URI"),
-		ServerPort:  os.Getenv("SERVER_PORT"),
-	}
 }

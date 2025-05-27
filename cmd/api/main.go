@@ -29,9 +29,9 @@ func main() {
 
 	// run app
 	if err = app.Run(); err != nil && !errors.Is(err, context.Canceled) {
-		app.Logger().Error("failed to start server", "error", err)
+		app.Logger().Error("failed to start app", "error", err)
 		os.Exit(1)
 	}
 
-	app.Logger().Info("server exited")
+	app.Logger().Info("app exited")
 }

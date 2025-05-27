@@ -8,7 +8,7 @@ func SetupFiberRoutes(
 	userH *UserHandler,
 	custH *CustomerHandler,
 	invH *InvoiceHandler,
-) *RouteInitializer {
+) RouteInitializer {
 
 	r := s.app.Group("/api")
 
@@ -43,5 +43,5 @@ func SetupFiberRoutes(
 		ig.Delete("/:id", invH.Delete, rateLimiter(30))
 	}
 
-	return &RouteInitializer{}
+	return RouteInitializer{}
 }

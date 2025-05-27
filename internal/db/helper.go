@@ -13,10 +13,10 @@ func FromCtx(ctx context.Context) (*gorm.DB, bool) {
 	return db, ok
 }
 
-func RecordExists(tx *gorm.DB) (bool, error) {
+func RecordExists(q *gorm.DB) (bool, error) {
 	var hit int
 
-	if err := tx.Select("1").Limit(1).Scan(&hit).Error; err != nil {
+	if err := q.Select("1").Limit(1).Scan(&hit).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return false, nil
 		}

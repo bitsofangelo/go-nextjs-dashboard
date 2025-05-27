@@ -87,6 +87,6 @@ func (e *AppError) Unwrap() error {
 }
 
 type ValidationError struct {
-	Message string            `json:"message"`
-	Errors  map[string]string `json:"errors"`
+	Message string              `json:"message"`
+	Errors  map[string][]string `json:"errors"`
 }

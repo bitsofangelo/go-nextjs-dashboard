@@ -11,6 +11,7 @@ import (
 	"go-nextjs-dashboard/internal/customer"
 	"go-nextjs-dashboard/internal/http/request"
 	"go-nextjs-dashboard/internal/http/response"
+	"go-nextjs-dashboard/internal/http/validation"
 	"go-nextjs-dashboard/internal/invoice"
 	"go-nextjs-dashboard/internal/listing"
 	"go-nextjs-dashboard/internal/logger"
@@ -19,13 +20,20 @@ import (
 type InvoiceHandler struct {
 	invSvc        *invoice.Service
 	createInvoice *app.CreateInvoice
+	validator     validation.Validator
 	logger        logger.Logger
 }
 
-func NewInvoiceHandler(invSvc *invoice.Service, createInvoice *app.CreateInvoice, logger logger.Logger) *InvoiceHandler {
+func NewInvoiceHandler(
+	invSvc *invoice.Service,
+	createInvoice *app.CreateInvoice,
+	validator validation.Validator,
+	logger logger.Logger,
+) *InvoiceHandler {
 	return &InvoiceHandler{
 		invSvc:        invSvc,
 		createInvoice: createInvoice,
+		validator:     validator,
 		logger:        logger.With("component", "http.invoice"),
 	}
 }
@@ -90,7 +98,7 @@ func (h *InvoiceHandler) Create(c fiber.Ctx) error {
 		return fmt.Errorf("create invoice bind request body: %w", err)
 	}
 
-	if err := req.Validate(c.Context()); err != nil {
+	if err := h.validator.ValidateStruct(c.Context(), req); err != nil {
 		return fmt.Errorf("create invoice validation: %w", err)
 	}
 
@@ -125,8 +133,8 @@ func (h *InvoiceHandler) Update(c fiber.Ctx) error {
 		return fmt.Errorf("update invoice bind request body: %w", err)
 	}
 
-	if err = req.Validate(c.Context()); err != nil {
-		return fmt.Errorf("update invoice validation: %w", err)
+	if err = h.validator.ValidateStruct(c.Context(), req); err != nil {
+		return fmt.Errorf("create invoice validation: %w", err)
 	}
 
 	updateInput, err := req.ToDTO()

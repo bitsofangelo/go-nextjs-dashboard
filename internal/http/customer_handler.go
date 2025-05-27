@@ -10,18 +10,21 @@ import (
 	"go-nextjs-dashboard/internal/customer"
 	"go-nextjs-dashboard/internal/http/request"
 	"go-nextjs-dashboard/internal/http/response"
+	"go-nextjs-dashboard/internal/http/validation"
 	"go-nextjs-dashboard/internal/logger"
 )
 
 type CustomerHandler struct {
-	svc    *customer.Service
-	logger logger.Logger
+	svc       *customer.Service
+	validator validation.Validator
+	logger    logger.Logger
 }
 
-func NewCustomerHandler(svc *customer.Service, log logger.Logger) *CustomerHandler {
+func NewCustomerHandler(svc *customer.Service, validator validation.Validator, log logger.Logger) *CustomerHandler {
 	return &CustomerHandler{
-		svc:    svc,
-		logger: log.With("component", "http.customer"),
+		svc:       svc,
+		validator: validator,
+		logger:    log.With("component", "http.customer"),
 	}
 }
 
@@ -69,8 +72,8 @@ func (h *CustomerHandler) Create(c fiber.Ctx) error {
 		return fmt.Errorf("creaate customer bind request body: %w", err)
 	}
 
-	if err := req.Validate(c.Context()); err != nil {
-		return fmt.Errorf("customer create request validation: %w", err)
+	if err := h.validator.ValidateStruct(c.Context(), req); err != nil {
+		return fmt.Errorf("create customer validation: %w", err)
 	}
 
 	reqCust := req.ToCustomer()

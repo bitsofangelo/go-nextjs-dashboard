@@ -7,37 +7,35 @@ import (
 	"reflect"
 )
 
-type Mode int
-
-const (
-	ModeSync Mode = iota
-	ModeAsync
-)
-
-type Event interface{}
-
 type Publisher interface {
-	Publish(ctx context.Context, evt Event) error
+	Publish(ctx context.Context, event any) error
 }
 
-type Handler[T Event] func(context.Context, T) error
+type KeyedPublisher interface {
+	Publisher
+	Key() string
+}
 
 type Broker struct {
 	buses map[string]Publisher
 }
 
-func NewBroker(buses map[string]Publisher) *Broker {
+func NewBroker() *Broker {
 	return &Broker{
-		buses: buses,
+		buses: make(map[string]Publisher),
 	}
 }
 
-func (r *Broker) Publish(ctx context.Context, evt Event) error {
-	t := reflect.TypeOf(evt).String()
+func (r *Broker) RegisterBus(bus KeyedPublisher) {
+	r.buses[bus.Key()] = bus
+}
+
+func (r *Broker) Publish(ctx context.Context, event any) error {
+	t := reflect.TypeOf(event).String()
 	bus, ok := r.buses[t]
 	if !ok {
 		return errors.New(fmt.Sprintf("eventBus [%s] not registered", t))
 	}
 
-	return bus.Publish(ctx, evt)
+	return bus.Publish(ctx, event)
 }

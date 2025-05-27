@@ -13,7 +13,7 @@ type Invoice struct {
 	CustomerID *uuid.UUID `json:"customer_id"`
 	Amount     float64    `json:"amount"`
 	Status     string     `json:"status"`
-	Date       time.Time  `json:"date"`
+	Date       *time.Time `json:"date"`
 	IsActive   *bool      `json:"is_active"`
 }
 
@@ -33,7 +33,7 @@ type InvoiceWithCustomerInfo struct {
 	CustomerID       *uuid.UUID `json:"customer_id"`
 	Amount           float64    `json:"amount"`
 	Status           string     `json:"status"`
-	Date             time.Time  `json:"date"`
+	Date             *time.Time `json:"date"`
 	CustomerName     string     `json:"name"`
 	CustomerEmail    string     `json:"email"`
 	CustomerImageURL string     `json:"image_url"`

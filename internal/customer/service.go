@@ -2,6 +2,7 @@ package customer
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -35,13 +36,14 @@ func (s *Service) List(ctx context.Context) ([]Customer, error) {
 }
 
 func (s *Service) GetByID(ctx context.Context, id uuid.UUID) (*Customer, error) {
-	c, err := s.store.Find(ctx, id)
-
-	if err != nil {
-		return nil, fmt.Errorf("find customer: %w", err)
-	}
-
-	return c, nil
+	return nil, errors.New("not implemented")
+	// c, err := s.store.Find(ctx, id)
+	//
+	// if err != nil {
+	// 	return nil, fmt.Errorf("find customer: %w", err)
+	// }
+	//
+	// return c, nil
 }
 
 func (s *Service) Exists(ctx context.Context, id uuid.UUID) (bool, error) {
@@ -78,7 +80,7 @@ func (s *Service) Create(ctx context.Context, c Customer) (*Customer, error) {
 }
 
 func (s *Service) SearchWithInvoiceInfo(ctx context.Context, search string) ([]WithInvoiceInfo, error) {
-	result, err := s.store.SearchWithInvoiceTotals(ctx, search)
+	result, err := s.store.SearchWithInvoiceInfo(ctx, search)
 	if err != nil {
 		return nil, fmt.Errorf("search with invoice totals: %w", err)
 	}

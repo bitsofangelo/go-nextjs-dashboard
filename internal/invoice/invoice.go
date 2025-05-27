@@ -11,6 +11,6 @@ type Invoice struct {
 	CustomerID *uuid.UUID
 	Amount     float64
 	Status     string
-	Date       time.Time
+	Date       *time.Time
 	IsActive   *bool
 }

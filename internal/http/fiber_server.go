@@ -35,11 +35,12 @@ func NewFiberServer(
 
 	// global middlewares
 	// app.Use(logger.New())
+	app.Use(recover.New(recover.Config{}))
+	app.Use(RequestLocale())
 	app.Use(RequestID())
 	app.Use(cors.New(cors.Config{}))
 	app.Use(limiter.New(limiter.Config{Max: 60}))
 	app.Use(ValidationResponse())
-	app.Use(recover.New(recover.Config{}))
 
 	return &FiberServer{cfg, app}
 }
@@ -65,7 +66,7 @@ func fiberErrHandler(cfg *config.Config, logger logger.Logger) fiber.ErrorHandle
 
 		var e *response.AppError
 		var fe *fiber.Error
-		var je *json.UnmarshalTypeError
+		var jsonSynErr *json.SyntaxError
 
 		switch {
 		case errors.As(err, &e):
@@ -74,9 +75,10 @@ func fiberErrHandler(cfg *config.Config, logger logger.Logger) fiber.ErrorHandle
 		case errors.As(err, &fe) && fe.Code != code:
 			code = fe.Code
 			message = fe.Message
-		case errors.As(err, &je):
-			code = fiber.StatusUnprocessableEntity
-			message = fmt.Sprintf("%s has invalid type", je.Field)
+
+		case errors.As(err, &jsonSynErr):
+			code = fiber.StatusBadRequest
+			message = "Invalid JSON"
 		}
 
 		if code >= fiber.StatusInternalServerError {
