@@ -1,9 +1,13 @@
 package http
 
+import "go-nextjs-dashboard/internal/auth"
+
 type RouteInitializer struct{}
 
 func SetupFiberRoutes(
 	s *FiberServer,
+	authSvc *auth.Service,
+	authH *AuthHandler,
 	dashH *DashboardHandler,
 	userH *UserHandler,
 	custH *CustomerHandler,
@@ -12,8 +16,14 @@ func SetupFiberRoutes(
 
 	r := s.app.Group("/api")
 
+	// auth routes
+	ag := r.Group("/auth", loggerKeyMiddleware("http.auth"))
+	{
+		ag.Post("/login", authH.Login)
+	}
+
 	// dashboard routes
-	dg := r.Group("", loggerKeyMiddleware("http.dashboard"))
+	dg := r.Group("/dash", loggerKeyMiddleware("http.dashboard"), AuthMiddleware(authSvc))
 	{
 		dg.Get("/overview", dashH.GetOverview)
 		dg.Get("/revenues", dashH.GetMonthlyRevenues)

@@ -7,6 +7,7 @@ import (
 	"github.com/google/wire"
 
 	"go-nextjs-dashboard/internal/app"
+	"go-nextjs-dashboard/internal/auth"
 	"go-nextjs-dashboard/internal/config"
 	"go-nextjs-dashboard/internal/customer"
 	"go-nextjs-dashboard/internal/dashboard"
@@ -45,6 +46,15 @@ var AppProviders = wire.NewSet(
 	gp.New,
 	wire.Bind(new(validation.Validator), new(*gp.Validator)),
 
+	// AUTH
+	auth.NewGormRefreshStore,
+	wire.Bind(new(auth.RefreshStore), new(*auth.GormRefreshStore)),
+	auth.NewArgonHasher,
+	wire.Bind(new(auth.PasswordHasher), new(*auth.ArgonHasher)),
+	auth.NewGOJWT,
+	wire.Bind(new(auth.JWT), new(*auth.GOJWT)),
+	auth.New,
+
 	// STORE & SERVICES
 	customer.NewStore,
 	wire.Bind(new(customer.Store), new(*customer.GormStore)),
@@ -63,11 +73,13 @@ var AppProviders = wire.NewSet(
 	invoice.NewService,
 
 	// USE CASES
+	app.NewAuthenticateUser,
 	app.NewCreateInvoice,
 )
 
 var HTTPProviders = wire.NewSet(
 	// HANDLERS
+	http.NewAuthHandler,
 	http.NewDashboardHandler,
 	http.NewUserHandler,
 	http.NewCustomerHandler,

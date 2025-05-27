@@ -9,6 +9,7 @@ package bootstrap
 import (
 	"context"
 	"go-nextjs-dashboard/internal/app"
+	"go-nextjs-dashboard/internal/auth"
 	"go-nextjs-dashboard/internal/config"
 	"go-nextjs-dashboard/internal/customer"
 	"go-nextjs-dashboard/internal/dashboard"
@@ -34,15 +35,21 @@ func InitializeApp(ctx context.Context) (*App, error) {
 		return nil, err
 	}
 	fiberServer := http.NewFiberServer(configConfig, logger)
+	argonHasher := auth.NewArgonHasher()
+	gojwt := auth.NewGOJWT()
 	gormDB, err := db.Open(configConfig, logger)
 	if err != nil {
 		return nil, err
 	}
-	gormStore := dashboard.NewStore(gormDB, logger)
-	service := dashboard.NewService(gormStore, logger)
-	dashboardHandler := http.NewDashboardHandler(service, logger)
-	userGormStore := user.NewStore(gormDB, logger)
-	userService := user.NewService(userGormStore, logger)
+	gormRefreshStore := auth.NewGormRefreshStore(gormDB, logger)
+	service := auth.New(argonHasher, gojwt, gormRefreshStore, logger)
+	gormStore := user.NewStore(gormDB, logger)
+	userService := user.NewService(gormStore, logger)
+	authenticateUser := app.NewAuthenticateUser(userService, service)
+	authHandler := http.NewAuthHandler(service, authenticateUser)
+	dashboardGormStore := dashboard.NewStore(gormDB, logger)
+	dashboardService := dashboard.NewService(dashboardGormStore, logger)
+	dashboardHandler := http.NewDashboardHandler(dashboardService, logger)
 	userHandler := http.NewUserHandler(userService, logger)
 	customerGormStore := customer.NewStore(gormDB, logger)
 	broker := event.NewBroker()
@@ -57,7 +64,7 @@ func InitializeApp(ctx context.Context) (*App, error) {
 	gormTxManager := db.NewTxManager(gormDB)
 	createInvoice := app.NewCreateInvoice(customerService, invoiceService, gormTxManager, logger)
 	invoiceHandler := http.NewInvoiceHandler(invoiceService, createInvoice, validator, logger)
-	routeInitializer := http.SetupFiberRoutes(fiberServer, dashboardHandler, userHandler, customerHandler, invoiceHandler)
+	routeInitializer := http.SetupFiberRoutes(fiberServer, service, authHandler, dashboardHandler, userHandler, customerHandler, invoiceHandler)
 	bootstrapTimezoneInitializer, err := setTimezone(configConfig)
 	if err != nil {
 		return nil, err

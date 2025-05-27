@@ -6,11 +6,13 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/limiter"
 	"github.com/google/uuid"
 
+	"go-nextjs-dashboard/internal/auth"
 	"go-nextjs-dashboard/internal/http/response"
 	"go-nextjs-dashboard/internal/http/validation"
 )
@@ -18,6 +20,23 @@ import (
 func init() {
 	limiter.ConfigDefault.LimitReached = func(ctx fiber.Ctx) error {
 		return fiber.NewError(http.StatusTooManyRequests, "Too Many Requests")
+	}
+}
+
+func AuthMiddleware(authSvc *auth.Service) fiber.Handler {
+	return func(c fiber.Ctx) error {
+		tokenStr := strings.TrimPrefix(c.Get("Authorization"), "Bearer ")
+
+		claims, err := authSvc.ParseJWT(tokenStr)
+		if err != nil {
+
+			// TODO return meaningful error
+			return fiber.NewError(http.StatusUnauthorized, err.Error())
+		}
+
+		c.Locals("user", claims.UserID)
+
+		return c.Next()
 	}
 }
 

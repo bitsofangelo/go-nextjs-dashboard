@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 
 	"go-nextjs-dashboard/internal/logger"
@@ -20,25 +19,13 @@ type userModel struct {
 }
 
 func (user *User) BeforeCreate(tx *gorm.DB) (err error) {
-	user.ID = uuid.New()
-	hashedPassword, err := HashPassword(user.Password)
-	if err != nil {
-		return
-	}
-	user.Password = hashedPassword
+	// user.ID = uuid.New()
+	// hashedPassword, err := auth.HashPassword(user.Password)
+	// if err != nil {
+	// 	return
+	// }
+	// user.Password = hashedPassword
 	return
-}
-
-// HashPassword hashes a plaintext password using bcrypt
-func HashPassword(password string) (string, error) {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
-	return string(bytes), err
-}
-
-// CheckPasswordHash checks if the given password matches the hashed password
-func CheckPasswordHash(password, hash string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-	return err == nil
 }
 
 type GormStore struct {
