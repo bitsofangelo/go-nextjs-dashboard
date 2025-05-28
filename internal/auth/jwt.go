@@ -1,29 +1,33 @@
 package auth
 
 import (
+	"errors"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+
+	"go-nextjs-dashboard/internal/config"
 )
 
-var hmacKey = []byte(os.Getenv("JWT_HMAC_KEY"))
-
-type AccessClaims struct {
+type JWTClaims struct {
 	UserID uuid.UUID
 	jwt.RegisteredClaims
 }
 
-type GOJWT struct{}
+type GOJWT struct {
+	hmacKey []byte
+}
 
-func NewGOJWT() *GOJWT {
-	return &GOJWT{}
+func NewGOJWT(cfg *config.Config) *GOJWT {
+	return &GOJWT{
+		hmacKey: []byte(cfg.JWTHmacKey),
+	}
 }
 
 func (g *GOJWT) NewAccess(uid uuid.UUID) (string, time.Time, error) {
-	claims := AccessClaims{
+	claims := JWTClaims{
 		UserID: uid,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ID:        uuid.NewString(), // jti
@@ -35,7 +39,7 @@ func (g *GOJWT) NewAccess(uid uuid.UUID) (string, time.Time, error) {
 
 	tok := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	signed, err := tok.SignedString(hmacKey)
+	signed, err := tok.SignedString(g.hmacKey)
 	if err != nil {
 		return "", time.Now(), fmt.Errorf("signing token: %w", err)
 	}
@@ -48,18 +52,25 @@ func (g *GOJWT) NewAccess(uid uuid.UUID) (string, time.Time, error) {
 	return signed, exp.Time, nil
 }
 
-func (g *GOJWT) ParseAccess(tokenStr string) (Claims, error) {
-	tok, err := jwt.ParseWithClaims(tokenStr, &AccessClaims{}, func(t *jwt.Token) (any, error) {
-		return hmacKey, nil
+func (g *GOJWT) ParseAccess(tokenStr string) (AccessClaims, error) {
+	tok, err := jwt.ParseWithClaims(tokenStr, &JWTClaims{}, func(t *jwt.Token) (any, error) {
+		return g.hmacKey, nil
 	})
 
 	if err != nil {
-		return Claims{}, err // signature, exp, nbf, etc.
+		switch {
+		case errors.Is(err, jwt.ErrTokenSignatureInvalid), errors.Is(err, jwt.ErrTokenMalformed):
+			return AccessClaims{}, ErrJWTInvalid
+		case errors.Is(err, jwt.ErrTokenExpired):
+			return AccessClaims{}, ErrJWTExpired
+		default:
+			return AccessClaims{}, fmt.Errorf("parsing token: %w", err)
+		}
 	}
 
-	ac := tok.Claims.(*AccessClaims)
+	ac := tok.Claims.(*JWTClaims)
 
-	claims := Claims{
+	claims := AccessClaims{
 		Issuer:    ac.Issuer,
 		Subject:   ac.Subject,
 		Audience:  ac.Audience,

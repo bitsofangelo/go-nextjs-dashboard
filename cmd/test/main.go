@@ -1,15 +1,9 @@
 package main
 
 import (
-	"context"
 	"fmt"
 
-	"github.com/google/uuid"
-
-	"go-nextjs-dashboard/internal/auth"
-	"go-nextjs-dashboard/internal/config"
-	"go-nextjs-dashboard/internal/db"
-	sloglogger "go-nextjs-dashboard/internal/logger/slog"
+	"go-nextjs-dashboard/internal/hashing"
 )
 
 type T int
@@ -23,25 +17,26 @@ func main() {
 	// fmt.Println(errors.Join(errs...))
 	//
 
-	cfg, _ := config.Load()
-	logger, _ := sloglogger.New(cfg)
-	database, _ := db.Open(cfg, logger)
-	hasher := auth.NewArgonHasher()
-	gojwt := auth.NewGOJWT()
-	refreshStore := auth.NewGormRefreshStore(database, logger)
-	a := auth.New(hasher, gojwt, refreshStore, logger)
+	// cfg, _ := config.Load()
+	// logger, _ := sloglogger.New(cfg)
+	// database, _ := db.Open(cfg, logger)
+	hasher := hashing.NewArgon2IDHasher()
+	hash := hashing.New(hasher)
+	// gojwt := auth.NewGOJWT()
+	// refreshStore := auth.NewGormRefreshStore(database, logger)
+	// a := auth.New(hash, gojwt, refreshStore, logger)
 
-	uid := uuid.New()
-	token, _ := a.CreateRefreshToken(context.Background(), uid)
+	// uid := uuid.New()
+	// token, _ := a.CreateRefreshToken(context.Background(), uid)
 
-	fmt.Println(uid, token)
+	// fmt.Println(uid, token)
 
 	// uid := uuid.New()
 	// s, _ := a.NewJWT(uid)
 	// c, _ := a.ParseJWT(s)
 	// fmt.Println(c, "uid", uid)
 
-	p, _ := a.HashPassword("123456")
-	ok, _ := a.CheckPasswordHash("123456", p)
+	p, _ := hash.Make("123456")
+	ok, _ := hash.Check("123456", p)
 	fmt.Println(p, ok)
 }

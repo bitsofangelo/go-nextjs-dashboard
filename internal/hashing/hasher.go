@@ -1,4 +1,4 @@
-package auth
+package hashing
 
 import (
 	"fmt"
@@ -6,13 +6,15 @@ import (
 	"github.com/alexedwards/argon2id"
 )
 
-type ArgonHasher struct{}
+type Argon2IDHasher struct{}
 
-func NewArgonHasher() *ArgonHasher {
-	return &ArgonHasher{}
+func NewArgon2IDHasher() *Argon2IDHasher {
+	return &Argon2IDHasher{}
 }
 
-func (a *ArgonHasher) HashPassword(password string) (string, error) {
+var _ Hasher = (*Argon2IDHasher)(nil)
+
+func (a *Argon2IDHasher) Hash(password string) (string, error) {
 	// bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
 	s, err := argon2id.CreateHash(password, argon2id.DefaultParams)
 	if err != nil {
@@ -21,7 +23,7 @@ func (a *ArgonHasher) HashPassword(password string) (string, error) {
 	return s, nil
 }
 
-func (a *ArgonHasher) CheckPasswordHash(password, hash string) (bool, error) {
+func (a *Argon2IDHasher) Check(password, hash string) (bool, error) {
 	// err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 	ok, err := argon2id.ComparePasswordAndHash(password, hash)
 	if err != nil {

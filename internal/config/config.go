@@ -30,6 +30,8 @@ type Config struct {
 	LogFormat string `mapstructure:"LOG_FORMAT"` // "text" | "json"
 	LogPath   string `mapstructure:"LOG_PATH"`
 	LogOutput string `mapstructure:"LOG_OUTPUT"` // "stdout" (default) | "./logs/app.log" | "/var/log/<app_name>/app.log
+
+	JWTHmacKey string `mapstructure:"JWT_HMAC_KEY"`
 }
 
 func Load() (*Config, error) {

@@ -26,12 +26,20 @@ func init() {
 func AuthMiddleware(authSvc *auth.Service) fiber.Handler {
 	return func(c fiber.Ctx) error {
 		tokenStr := strings.TrimPrefix(c.Get("Authorization"), "Bearer ")
+		if tokenStr == "" {
+			return fiber.NewError(http.StatusUnauthorized, "missing authorization header")
+		}
 
 		claims, err := authSvc.ParseJWT(tokenStr)
 		if err != nil {
-
-			// TODO return meaningful error
-			return fiber.NewError(http.StatusUnauthorized, err.Error())
+			switch {
+			case errors.Is(err, auth.ErrJWTInvalid):
+				return fiber.NewError(http.StatusUnauthorized, "invalid token")
+			case errors.Is(err, auth.ErrJWTExpired):
+				return fiber.NewError(http.StatusUnauthorized, "expired token")
+			default:
+				return fmt.Errorf("parse token: %w", err)
+			}
 		}
 
 		c.Locals("user", claims.UserID)

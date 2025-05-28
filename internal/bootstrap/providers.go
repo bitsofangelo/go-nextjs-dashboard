@@ -14,6 +14,7 @@ import (
 	database "go-nextjs-dashboard/internal/db"
 	"go-nextjs-dashboard/internal/event"
 	"go-nextjs-dashboard/internal/event/bus"
+	"go-nextjs-dashboard/internal/hashing"
 	"go-nextjs-dashboard/internal/http"
 	"go-nextjs-dashboard/internal/http/validation"
 	"go-nextjs-dashboard/internal/http/validation/gp"
@@ -46,11 +47,14 @@ var AppProviders = wire.NewSet(
 	gp.New,
 	wire.Bind(new(validation.Validator), new(*gp.Validator)),
 
+	// HASHING
+	hashing.NewArgon2IDHasher,
+	wire.Bind(new(hashing.Hasher), new(*hashing.Argon2IDHasher)),
+	hashing.New,
+
 	// AUTH
 	auth.NewGormRefreshStore,
 	wire.Bind(new(auth.RefreshStore), new(*auth.GormRefreshStore)),
-	auth.NewArgonHasher,
-	wire.Bind(new(auth.PasswordHasher), new(*auth.ArgonHasher)),
 	auth.NewGOJWT,
 	wire.Bind(new(auth.JWT), new(*auth.GOJWT)),
 	auth.New,

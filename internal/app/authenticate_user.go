@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"go-nextjs-dashboard/internal/auth"
+	"go-nextjs-dashboard/internal/hashing"
 	"go-nextjs-dashboard/internal/user"
 )
 
@@ -17,14 +18,16 @@ type AccessToken struct {
 }
 
 type AuthenticateUser struct {
-	authSvc *auth.Service
-	usrSvc  *user.Service
+	auth   *auth.Service
+	usrSvc *user.Service
+	hash   *hashing.Hash
 }
 
-func NewAuthenticateUser(usrSvc *user.Service, authSvc *auth.Service) *AuthenticateUser {
+func NewAuthenticateUser(usrSvc *user.Service, auth *auth.Service, hash *hashing.Hash) *AuthenticateUser {
 	return &AuthenticateUser{
-		usrSvc:  usrSvc,
-		authSvc: authSvc,
+		usrSvc: usrSvc,
+		auth:   auth,
+		hash:   hash,
 	}
 }
 
@@ -41,7 +44,7 @@ func (u AuthenticateUser) Execute(ctx context.Context, username, password string
 		}
 	}
 
-	match, err := u.authSvc.CheckPasswordHash(password, usr.Password)
+	match, err := u.hash.Check(password, usr.Password)
 	if err != nil {
 		return accessToken, fmt.Errorf("check password hash: %w", err)
 	}
@@ -49,12 +52,12 @@ func (u AuthenticateUser) Execute(ctx context.Context, username, password string
 		return accessToken, auth.ErrPasswordIncorrect
 	}
 
-	newAccess, exp, err := u.authSvc.NewJWT(usr.ID)
+	newAccess, exp, err := u.auth.NewJWT(usr.ID)
 	if err != nil {
 		return accessToken, fmt.Errorf("new access token: %w", err)
 	}
 
-	refresh, err := u.authSvc.CreateRefreshToken(ctx, usr.ID)
+	refresh, err := u.auth.CreateRefreshToken(ctx, usr.ID)
 	if err != nil {
 		return accessToken, fmt.Errorf("create refresh token: %w", err)
 	}

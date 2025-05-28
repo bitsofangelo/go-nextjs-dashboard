@@ -16,6 +16,7 @@ import (
 	"go-nextjs-dashboard/internal/db"
 	"go-nextjs-dashboard/internal/event"
 	"go-nextjs-dashboard/internal/event/bus"
+	"go-nextjs-dashboard/internal/hashing"
 	"go-nextjs-dashboard/internal/http"
 	"go-nextjs-dashboard/internal/http/validation/gp"
 	"go-nextjs-dashboard/internal/invoice"
@@ -35,18 +36,19 @@ func InitializeApp(ctx context.Context) (*App, error) {
 		return nil, err
 	}
 	fiberServer := http.NewFiberServer(configConfig, logger)
-	argonHasher := auth.NewArgonHasher()
 	gojwt := auth.NewGOJWT()
 	gormDB, err := db.Open(configConfig, logger)
 	if err != nil {
 		return nil, err
 	}
 	gormRefreshStore := auth.NewGormRefreshStore(gormDB, logger)
-	service := auth.New(argonHasher, gojwt, gormRefreshStore, logger)
+	service := auth.New(gojwt, gormRefreshStore)
 	gormStore := user.NewStore(gormDB, logger)
 	userService := user.NewService(gormStore, logger)
-	authenticateUser := app.NewAuthenticateUser(userService, service)
-	authHandler := http.NewAuthHandler(service, authenticateUser)
+	argon2IDHasher := hashing.NewArgon2IDHasher()
+	hash := hashing.New(argon2IDHasher)
+	authenticateUser := app.NewAuthenticateUser(userService, service, hash)
+	authHandler := http.NewAuthHandler(authenticateUser)
 	dashboardGormStore := dashboard.NewStore(gormDB, logger)
 	dashboardService := dashboard.NewService(dashboardGormStore, logger)
 	dashboardHandler := http.NewDashboardHandler(dashboardService, logger)

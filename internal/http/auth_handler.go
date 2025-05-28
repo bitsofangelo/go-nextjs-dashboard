@@ -14,13 +14,11 @@ import (
 )
 
 type AuthHandler struct {
-	authSvc  *auth.Service
 	authUser *app.AuthenticateUser
 }
 
-func NewAuthHandler(authSvc *auth.Service, authUser *app.AuthenticateUser) *AuthHandler {
+func NewAuthHandler(authUser *app.AuthenticateUser) *AuthHandler {
 	return &AuthHandler{
-		authSvc:  authSvc,
 		authUser: authUser,
 	}
 }
