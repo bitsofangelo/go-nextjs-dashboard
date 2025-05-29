@@ -6,7 +6,7 @@ type RouteInitializer struct{}
 
 func SetupFiberRoutes(
 	s *FiberServer,
-	authSvc *auth.Service,
+	authSvc *auth.Token,
 	authH *AuthHandler,
 	dashH *DashboardHandler,
 	userH *UserHandler,

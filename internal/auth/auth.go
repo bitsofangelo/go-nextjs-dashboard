@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+
+	"go-nextjs-dashboard/internal/user"
 )
 
 var (
@@ -14,6 +16,58 @@ var (
 	ErrJWTExpired        = errors.New("JWT is expired")
 	ErrJWTInvalid        = errors.New("JWT is invalid")
 )
+
+type Provider int
+
+const (
+	ProviderPassword Provider = iota
+	ProviderGoogle
+)
+
+type Credentials any
+
+type Authenticator interface {
+	Authenticate(context.Context, Credentials) (*user.User, error)
+}
+
+type Manager interface {
+	Authenticator
+	Provider(Provider) Authenticator
+}
+
+type ProviderManager struct {
+	passwordProvider *PasswordProvider
+	googleProvider   *GoogleProvider
+	def              Provider
+}
+
+var _ Manager = (*ProviderManager)(nil)
+
+func NewManager(passwordProvider *PasswordProvider, googleProvider *GoogleProvider) *ProviderManager {
+	return &ProviderManager{
+		passwordProvider: passwordProvider,
+		googleProvider:   googleProvider,
+		def:              ProviderPassword,
+	}
+}
+
+func (p *ProviderManager) Provider(provider Provider) Authenticator {
+	switch provider {
+	case ProviderGoogle:
+		return p.googleProvider
+	default:
+		return p.passwordProvider
+	}
+}
+
+func (p *ProviderManager) Authenticate(ctx context.Context, credentials Credentials) (*user.User, error) {
+	return p.Provider(p.def).Authenticate(ctx, credentials)
+}
+
+type JWT interface {
+	Sign(uid uuid.UUID) (string, time.Time, error)
+	Parse(token string) (AccessClaims, error)
+}
 
 type AccessClaims struct {
 	Issuer    string
@@ -27,42 +81,37 @@ type AccessClaims struct {
 	UserID uuid.UUID
 }
 
-type JWT interface {
-	NewAccess(uid uuid.UUID) (string, time.Time, error)
-	ParseAccess(token string) (AccessClaims, error)
-}
-
-type Service struct {
+type Token struct {
 	jwt          JWT
 	refreshStore RefreshStore
 	// logger       logger.Logger
 }
 
-func New(jwt JWT, refreshStore RefreshStore) *Service {
-	return &Service{
+func NewToken(jwt JWT, refreshStore RefreshStore) *Token {
+	return &Token{
 		jwt:          jwt,
 		refreshStore: refreshStore,
 		// logger:       logger.With("component", "auth"),
 	}
 }
 
-func (a *Service) NewJWT(uid uuid.UUID) (string, time.Time, error) {
-	s, exp, err := a.jwt.NewAccess(uid)
+func (a *Token) SignJWT(uid uuid.UUID) (string, time.Time, error) {
+	s, exp, err := a.jwt.Sign(uid)
 	if err != nil {
 		return "", time.Now(), fmt.Errorf("jwt new access: %w", err)
 	}
 	return s, exp, nil
 }
 
-func (a *Service) ParseJWT(token string) (AccessClaims, error) {
-	claims, err := a.jwt.ParseAccess(token)
+func (a *Token) ParseJWT(token string) (AccessClaims, error) {
+	claims, err := a.jwt.Parse(token)
 	if err != nil {
 		return AccessClaims{}, fmt.Errorf("jwt parse access: %w", err)
 	}
 	return claims, nil
 }
 
-func (a *Service) CreateRefreshToken(ctx context.Context, uid uuid.UUID) (string, error) {
+func (a *Token) CreateRefresh(ctx context.Context, uid uuid.UUID) (string, error) {
 	r, err := a.refreshStore.Insert(ctx, RefreshSession{
 		ID:        uuid.New(),
 		UserID:    uid,
@@ -78,7 +127,7 @@ func (a *Service) CreateRefreshToken(ctx context.Context, uid uuid.UUID) (string
 	return r.ID.String(), nil
 }
 
-func (a *Service) ExchangeRefreshToken(ctx context.Context, token string) (string, error) {
+func (a *Token) ExchangeRefresh(ctx context.Context, token string) (string, error) {
 	id, err := uuid.Parse(token)
 	if err != nil {
 		return "", fmt.Errorf("token uuid parse: %w", err)
@@ -94,7 +143,7 @@ func (a *Service) ExchangeRefreshToken(ctx context.Context, token string) (strin
 		return "", fmt.Errorf("update refresh session: %w", err)
 	}
 
-	newToken, err := a.CreateRefreshToken(ctx, sess.UserID)
+	newToken, err := a.CreateRefresh(ctx, sess.UserID)
 	if err != nil {
 		return "", fmt.Errorf("create refresh token: %w", err)
 	}

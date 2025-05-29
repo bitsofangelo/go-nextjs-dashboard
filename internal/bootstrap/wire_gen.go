@@ -36,42 +36,45 @@ func InitializeApp(ctx context.Context) (*App, error) {
 		return nil, err
 	}
 	fiberServer := http.NewFiberServer(configConfig, logger)
-	gojwt := auth.NewGOJWT()
+	bootstrapTimezoneInitializer, err := setTimezone(configConfig)
+	if err != nil {
+		return nil, err
+	}
+	broker := event.NewBroker()
 	gormDB, err := db.Open(configConfig, logger)
 	if err != nil {
 		return nil, err
 	}
+	gormStore := customer.NewStore(gormDB, logger)
+	service := customer.NewService(gormStore, broker, logger)
+	registerInitializer := bus.RegisterAll(broker, service, logger)
+	gojwt := auth.NewGOJWT(configConfig)
 	gormRefreshStore := auth.NewGormRefreshStore(gormDB, logger)
-	service := auth.New(gojwt, gormRefreshStore)
-	gormStore := user.NewStore(gormDB, logger)
-	userService := user.NewService(gormStore, logger)
+	token := auth.NewToken(gojwt, gormRefreshStore)
+	userGormStore := user.NewStore(gormDB, logger)
+	userService := user.NewService(userGormStore, logger)
 	argon2IDHasher := hashing.NewArgon2IDHasher()
 	hash := hashing.New(argon2IDHasher)
-	authenticateUser := app.NewAuthenticateUser(userService, service, hash)
+	passwordProvider := auth.NewPasswordProvider(userService, hash)
+	googleProvider := auth.NewGoogleProvider()
+	providerManager := auth.NewManager(passwordProvider, googleProvider)
+	authenticateUser := app.NewAuthenticateUser(providerManager, token, hash, userService)
 	authHandler := http.NewAuthHandler(authenticateUser)
 	dashboardGormStore := dashboard.NewStore(gormDB, logger)
 	dashboardService := dashboard.NewService(dashboardGormStore, logger)
 	dashboardHandler := http.NewDashboardHandler(dashboardService, logger)
 	userHandler := http.NewUserHandler(userService, logger)
-	customerGormStore := customer.NewStore(gormDB, logger)
-	broker := event.NewBroker()
-	customerService := customer.NewService(customerGormStore, broker, logger)
 	validator, err := gp.New()
 	if err != nil {
 		return nil, err
 	}
-	customerHandler := http.NewCustomerHandler(customerService, validator, logger)
+	customerHandler := http.NewCustomerHandler(service, validator, logger)
 	invoiceGormStore := invoice.NewStore(gormDB, logger)
 	invoiceService := invoice.NewService(invoiceGormStore, logger)
 	gormTxManager := db.NewTxManager(gormDB)
-	createInvoice := app.NewCreateInvoice(customerService, invoiceService, gormTxManager, logger)
+	createInvoice := app.NewCreateInvoice(service, invoiceService, gormTxManager, logger)
 	invoiceHandler := http.NewInvoiceHandler(invoiceService, createInvoice, validator, logger)
-	routeInitializer := http.SetupFiberRoutes(fiberServer, service, authHandler, dashboardHandler, userHandler, customerHandler, invoiceHandler)
-	bootstrapTimezoneInitializer, err := setTimezone(configConfig)
-	if err != nil {
-		return nil, err
-	}
-	registerInitializer := bus.RegisterAll(broker, customerService, logger)
-	bootstrapApp := NewApp(ctx, configConfig, logger, fiberServer, routeInitializer, bootstrapTimezoneInitializer, registerInitializer)
+	routeInitializer := http.SetupFiberRoutes(fiberServer, token, authHandler, dashboardHandler, userHandler, customerHandler, invoiceHandler)
+	bootstrapApp := NewApp(ctx, configConfig, logger, fiberServer, bootstrapTimezoneInitializer, registerInitializer, routeInitializer)
 	return bootstrapApp, nil
 }

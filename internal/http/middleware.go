@@ -23,14 +23,21 @@ func init() {
 	}
 }
 
-func AuthMiddleware(authSvc *auth.Service) fiber.Handler {
+type ctxKey string
+
+var (
+	reqIDKey  ctxKey = "req_id"
+	reqLocale ctxKey = "req_locale"
+)
+
+func AuthMiddleware(token *auth.Token) fiber.Handler {
 	return func(c fiber.Ctx) error {
 		tokenStr := strings.TrimPrefix(c.Get("Authorization"), "Bearer ")
 		if tokenStr == "" {
 			return fiber.NewError(http.StatusUnauthorized, "missing authorization header")
 		}
 
-		claims, err := authSvc.ParseJWT(tokenStr)
+		claims, err := token.ParseJWT(tokenStr)
 		if err != nil {
 			switch {
 			case errors.Is(err, auth.ErrJWTInvalid):
@@ -79,11 +86,6 @@ func ValidationResponse() fiber.Handler {
 		return err
 	}
 }
-
-type ctxKey string
-
-var reqIDKey ctxKey = "req_id"
-var reqLocale ctxKey = "req_locale"
 
 // RequestID extracts the request id from the request header or generates a new one
 func RequestID() fiber.Handler {

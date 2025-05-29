@@ -2,68 +2,53 @@ package app
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
 	"go-nextjs-dashboard/internal/auth"
 	"go-nextjs-dashboard/internal/hashing"
-	"go-nextjs-dashboard/internal/user"
 )
 
 type AccessToken struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
-	ExpiresIn    int    `json:"expires_in"`
+	AccessToken  string
+	RefreshToken string
+	ExpiresIn    int
 }
 
 type AuthenticateUser struct {
-	auth   *auth.Service
-	usrSvc *user.Service
-	hash   *hashing.Hash
+	auth  auth.Manager
+	token *auth.Token
+	hash  *hashing.Hash
 }
 
-func NewAuthenticateUser(usrSvc *user.Service, auth *auth.Service, hash *hashing.Hash) *AuthenticateUser {
+func NewAuthenticateUser(auth auth.Manager, token *auth.Token, hash *hashing.Hash) *AuthenticateUser {
 	return &AuthenticateUser{
-		usrSvc: usrSvc,
-		auth:   auth,
-		hash:   hash,
+		auth:  auth,
+		token: token,
+		hash:  hash,
 	}
 }
 
-func (u AuthenticateUser) Execute(ctx context.Context, username, password string) (AccessToken, error) {
+func (u *AuthenticateUser) Execute(ctx context.Context, provider auth.Provider, creds auth.Credentials) (AccessToken, error) {
 	var accessToken AccessToken
 
-	usr, err := u.usrSvc.GetByEmail(ctx, username)
+	usr, err := u.auth.Provider(provider).Authenticate(ctx, creds)
 	if err != nil {
-		switch {
-		case errors.Is(err, user.ErrUserNotFound):
-			return accessToken, user.ErrUserNotFound
-		default:
-			return accessToken, fmt.Errorf("get user by email: %w", err)
-		}
+		return accessToken, fmt.Errorf("authenticate: %w", err)
 	}
 
-	match, err := u.hash.Check(password, usr.Password)
+	jwt, exp, err := u.token.SignJWT(usr.ID)
 	if err != nil {
-		return accessToken, fmt.Errorf("check password hash: %w", err)
-	}
-	if !match {
-		return accessToken, auth.ErrPasswordIncorrect
+		return accessToken, fmt.Errorf("sign jwt: %w", err)
 	}
 
-	newAccess, exp, err := u.auth.NewJWT(usr.ID)
-	if err != nil {
-		return accessToken, fmt.Errorf("new access token: %w", err)
-	}
-
-	refresh, err := u.auth.CreateRefreshToken(ctx, usr.ID)
+	refresh, err := u.token.CreateRefresh(ctx, usr.ID)
 	if err != nil {
 		return accessToken, fmt.Errorf("create refresh token: %w", err)
 	}
 
 	accessToken = AccessToken{
-		AccessToken:  newAccess,
+		AccessToken:  jwt,
 		RefreshToken: refresh,
 		ExpiresIn:    int(time.Until(exp).Seconds()),
 	}

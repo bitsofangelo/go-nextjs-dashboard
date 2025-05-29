@@ -38,6 +38,7 @@ func SendWelcomeMessage(custSvc *customer.Service, log logger.Logger) Handler[cu
 				log.Error("get customer by id", "error", err.Error())
 				return
 			}
+
 			fmt.Println("Welcome message received", e.ID, cust.Name)
 		})
 
@@ -55,8 +56,10 @@ func SendVerifyEmailMessage(custSvc *customer.Service, log logger.Logger) Handle
 				log.Error("get customer by id", "error", err.Error())
 				return
 			}
+
 			fmt.Println("Email verification sent", e.ID, cust.Name)
 		})
+
 		return nil
 	}
 }

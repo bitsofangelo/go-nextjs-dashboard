@@ -30,7 +30,12 @@ func (h *AuthHandler) Login(c fiber.Ctx) error {
 		return fmt.Errorf("error parsing login request: %w", err)
 	}
 
-	token, err := h.authUser.Execute(c.Context(), login.Username, login.Password)
+	creds := auth.PasswordCredentials{
+		Username: login.Username,
+		Password: login.Password,
+	}
+
+	token, err := h.authUser.Execute(c.Context(), auth.ProviderPassword, creds)
 	if err != nil {
 		switch {
 		case errors.Is(err, user.ErrUserNotFound), errors.Is(err, auth.ErrPasswordIncorrect):
@@ -40,5 +45,7 @@ func (h *AuthHandler) Login(c fiber.Ctx) error {
 		}
 	}
 
-	return c.JSON(response.New(token))
+	return c.JSON(
+		response.New(response.ToAccessToken(token)),
+	)
 }

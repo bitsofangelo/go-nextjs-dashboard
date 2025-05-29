@@ -20,13 +20,15 @@ type GOJWT struct {
 	hmacKey []byte
 }
 
+var _ JWT = (*GOJWT)(nil)
+
 func NewGOJWT(cfg *config.Config) *GOJWT {
 	return &GOJWT{
 		hmacKey: []byte(cfg.JWTHmacKey),
 	}
 }
 
-func (g *GOJWT) NewAccess(uid uuid.UUID) (string, time.Time, error) {
+func (g *GOJWT) Sign(uid uuid.UUID) (string, time.Time, error) {
 	claims := JWTClaims{
 		UserID: uid,
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -52,7 +54,7 @@ func (g *GOJWT) NewAccess(uid uuid.UUID) (string, time.Time, error) {
 	return signed, exp.Time, nil
 }
 
-func (g *GOJWT) ParseAccess(tokenStr string) (AccessClaims, error) {
+func (g *GOJWT) Parse(tokenStr string) (AccessClaims, error) {
 	tok, err := jwt.ParseWithClaims(tokenStr, &JWTClaims{}, func(t *jwt.Token) (any, error) {
 		return g.hmacKey, nil
 	})

@@ -11,7 +11,7 @@ import (
 	"go-nextjs-dashboard/internal/config"
 	"go-nextjs-dashboard/internal/customer"
 	"go-nextjs-dashboard/internal/dashboard"
-	database "go-nextjs-dashboard/internal/db"
+	"go-nextjs-dashboard/internal/db"
 	"go-nextjs-dashboard/internal/event"
 	"go-nextjs-dashboard/internal/event/bus"
 	"go-nextjs-dashboard/internal/hashing"
@@ -20,7 +20,7 @@ import (
 	"go-nextjs-dashboard/internal/http/validation/gp"
 	"go-nextjs-dashboard/internal/invoice"
 	"go-nextjs-dashboard/internal/logger"
-	sloglogger "go-nextjs-dashboard/internal/logger/slog"
+	"go-nextjs-dashboard/internal/logger/slog"
 	"go-nextjs-dashboard/internal/user"
 )
 
@@ -30,13 +30,13 @@ var AppProviders = wire.NewSet(
 	setTimezone,
 
 	// DB
-	database.Open,
-	database.NewTxManager,
-	wire.Bind(new(database.TxManager), new(*database.GormTxManager)),
+	db.Open,
+	db.NewTxManager,
+	wire.Bind(new(db.TxManager), new(*db.GormTxManager)),
 
 	// LOGGER
-	sloglogger.New,
-	wire.Bind(new(logger.Logger), new(*sloglogger.Logger)),
+	slog.New,
+	wire.Bind(new(logger.Logger), new(*slog.Logger)),
 
 	// EVENT
 	event.NewBroker,
@@ -53,11 +53,15 @@ var AppProviders = wire.NewSet(
 	hashing.New,
 
 	// AUTH
+	auth.NewPasswordProvider,
+	auth.NewGoogleProvider,
+	auth.NewManager,
+	wire.Bind(new(auth.Manager), new(*auth.ProviderManager)),
 	auth.NewGormRefreshStore,
 	wire.Bind(new(auth.RefreshStore), new(*auth.GormRefreshStore)),
 	auth.NewGOJWT,
 	wire.Bind(new(auth.JWT), new(*auth.GOJWT)),
-	auth.New,
+	auth.NewToken,
 
 	// STORE & SERVICES
 	customer.NewStore,

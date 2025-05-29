@@ -27,12 +27,12 @@ func main() {
 	// a := auth.New(hash, gojwt, refreshStore, logger)
 
 	// uid := uuid.New()
-	// token, _ := a.CreateRefreshToken(context.Background(), uid)
+	// token, _ := a.CreateRefresh(context.Background(), uid)
 
 	// fmt.Println(uid, token)
 
 	// uid := uuid.New()
-	// s, _ := a.NewJWT(uid)
+	// s, _ := a.SignJWT(uid)
 	// c, _ := a.ParseJWT(s)
 	// fmt.Println(c, "uid", uid)
 

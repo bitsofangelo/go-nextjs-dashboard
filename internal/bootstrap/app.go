@@ -28,9 +28,9 @@ func NewApp(
 	cfg *config.Config,
 	logger logger.Logger,
 	server Server,
-	_ http.RouteInitializer,
 	_ timezoneInitializer,
 	_ bus.RegisterInitializer,
+	_ http.RouteInitializer,
 ) *App {
 	return &App{
 		cfg:    cfg,
