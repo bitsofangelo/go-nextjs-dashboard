@@ -3,7 +3,12 @@ package bootstrap
 import (
 	"context"
 	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
+
+	"gorm.io/gorm"
 
 	"go-dash/internal/config"
 	"go-dash/internal/event/bus"
@@ -18,14 +23,14 @@ type Server interface {
 
 type App struct {
 	cfg    *config.Config
+	db     *gorm.DB
 	logger logger.Logger
 	server Server
-	ctx    context.Context
 }
 
 func NewApp(
-	ctx context.Context,
 	cfg *config.Config,
+	db *gorm.DB,
 	logger logger.Logger,
 	server Server,
 	_ timezoneInitializer,
@@ -35,12 +40,16 @@ func NewApp(
 	return &App{
 		cfg:    cfg,
 		logger: logger,
+		db:     db,
 		server: server,
-		ctx:    ctx,
 	}
 }
 
 func (a *App) Run() error {
+	// handle signals for graceful shutdown
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
 	srvErr := make(chan error)
 
 	go func() {
@@ -52,7 +61,7 @@ func (a *App) Run() error {
 	select {
 	case err := <-srvErr:
 		return err
-	case <-a.ctx.Done(): // block until shutdown signal is received
+	case <-ctx.Done(): // block until shutdown signal is received
 		a.logger.With("component", "server").Info("shutdown signal received")
 
 		// give other goroutines time to finish (DB, jobs, etc.)
@@ -73,8 +82,14 @@ func (a *App) Logger() logger.Logger {
 
 func (a *App) Close() error {
 	if err := a.logger.Close(); err != nil {
-		a.logger.Error("failed to close logger", "error", err)
 		return fmt.Errorf("failed to close logger: %w", err)
 	}
+
+	if db, err := a.db.DB(); err == nil {
+		if err = db.Close(); err != nil {
+			return fmt.Errorf("failed to close database: %w", err)
+		}
+	}
+
 	return nil
 }

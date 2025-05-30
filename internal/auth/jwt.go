@@ -33,7 +33,7 @@ func (g *GOJWT) Sign(uid uuid.UUID) (string, time.Time, error) {
 		UserID: uid,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ID:        uuid.NewString(), // jti
-			Issuer:    "myapi",
+			Issuer:    "myapp",
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(15 * time.Minute)),
 		},

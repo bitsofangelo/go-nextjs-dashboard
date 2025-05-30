@@ -5,19 +5,13 @@ import (
 	"errors"
 	"log"
 	"os"
-	"os/signal"
-	"syscall"
 
 	"go-dash/internal/bootstrap"
 )
 
 func main() {
-	// handle signals for graceful shutdown
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
-
 	// init app
-	app, err := bootstrap.InitializeApp(ctx)
+	app, err := bootstrap.InitializeApp()
 	if err != nil {
 		log.Fatalf("failed to initialize app %v", err)
 	}

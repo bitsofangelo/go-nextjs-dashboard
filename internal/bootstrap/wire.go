@@ -4,12 +4,10 @@
 package bootstrap
 
 import (
-	"context"
-
 	"github.com/google/wire"
 )
 
-func InitializeApp(ctx context.Context) (*App, error) {
+func InitializeApp() (*App, error) {
 	wire.Build(
 		AppProviders,
 		HTTPProviders,

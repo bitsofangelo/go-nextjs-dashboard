@@ -7,7 +7,6 @@
 package bootstrap
 
 import (
-	"context"
 	"go-dash/internal/app"
 	"go-dash/internal/auth"
 	"go-dash/internal/config"
@@ -26,12 +25,16 @@ import (
 
 // Injectors from wire.go:
 
-func InitializeApp(ctx context.Context) (*App, error) {
+func InitializeApp() (*App, error) {
 	configConfig, err := config.Load()
 	if err != nil {
 		return nil, err
 	}
 	logger, err := slog.New(configConfig)
+	if err != nil {
+		return nil, err
+	}
+	gormDB, err := db.Open(configConfig, logger)
 	if err != nil {
 		return nil, err
 	}
@@ -41,10 +44,6 @@ func InitializeApp(ctx context.Context) (*App, error) {
 		return nil, err
 	}
 	broker := event.NewBroker()
-	gormDB, err := db.Open(configConfig, logger)
-	if err != nil {
-		return nil, err
-	}
 	gormStore := customer.NewStore(gormDB, logger)
 	service := customer.NewService(gormStore, broker, logger)
 	registerInitializer := bus.RegisterAll(broker, service, logger)
@@ -75,6 +74,6 @@ func InitializeApp(ctx context.Context) (*App, error) {
 	createInvoice := app.NewCreateInvoice(service, invoiceService, gormTxManager, logger)
 	invoiceHandler := http.NewInvoiceHandler(invoiceService, createInvoice, validator, logger)
 	routeInitializer := http.SetupFiberRoutes(fiberServer, token, authHandler, dashboardHandler, userHandler, customerHandler, invoiceHandler)
-	bootstrapApp := NewApp(ctx, configConfig, logger, fiberServer, bootstrapTimezoneInitializer, registerInitializer, routeInitializer)
+	bootstrapApp := NewApp(configConfig, gormDB, logger, fiberServer, bootstrapTimezoneInitializer, registerInitializer, routeInitializer)
 	return bootstrapApp, nil
 }
