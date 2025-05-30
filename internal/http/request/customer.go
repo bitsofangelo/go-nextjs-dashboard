@@ -1,7 +1,7 @@
 package request
 
 import (
-	"go-nextjs-dashboard/internal/customer"
+	"go-dash/internal/customer"
 )
 
 type CreateCustomer struct {

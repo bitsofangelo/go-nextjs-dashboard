@@ -7,9 +7,9 @@ import (
 
 	"github.com/google/uuid"
 
-	"go-nextjs-dashboard/internal/http/response"
-	"go-nextjs-dashboard/internal/invoice"
-	"go-nextjs-dashboard/internal/optional"
+	"go-dash/internal/http/response"
+	"go-dash/internal/invoice"
+	"go-dash/internal/optional"
 )
 
 type CreateInvoice struct {

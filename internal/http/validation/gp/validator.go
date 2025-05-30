@@ -16,9 +16,9 @@ import (
 	enTrans "github.com/go-playground/validator/v10/translations/en"
 	frTrans "github.com/go-playground/validator/v10/translations/fr"
 
-	"go-nextjs-dashboard/internal/http"
-	"go-nextjs-dashboard/internal/http/validation"
-	"go-nextjs-dashboard/internal/optional"
+	"go-dash/internal/http"
+	"go-dash/internal/http/validation"
+	"go-dash/internal/optional"
 )
 
 type Validator struct {

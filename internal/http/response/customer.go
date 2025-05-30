@@ -3,7 +3,7 @@ package response
 import (
 	"github.com/google/uuid"
 
-	"go-nextjs-dashboard/internal/customer"
+	"go-dash/internal/customer"
 )
 
 type Customer struct {

@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"go-nextjs-dashboard/internal/config"
-	"go-nextjs-dashboard/internal/logger"
+	"go-dash/internal/config"
+	"go-dash/internal/logger"
 )
 
 type Logger struct {

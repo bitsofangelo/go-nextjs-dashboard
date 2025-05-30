@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
-	"go-nextjs-dashboard/internal/logger"
+	"go-dash/internal/logger"
 )
 
 type userModel struct {

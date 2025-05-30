@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"go-nextjs-dashboard/internal/hashing"
+	"go-dash/internal/hashing"
 )
 
 type T int

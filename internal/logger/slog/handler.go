@@ -4,7 +4,7 @@ import (
 	"context"
 	"log/slog"
 
-	"go-nextjs-dashboard/internal/http"
+	"go-dash/internal/http"
 )
 
 type ctxHandler struct {

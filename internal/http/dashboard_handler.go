@@ -5,9 +5,9 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 
-	"go-nextjs-dashboard/internal/dashboard"
-	"go-nextjs-dashboard/internal/http/response"
-	"go-nextjs-dashboard/internal/logger"
+	"go-dash/internal/dashboard"
+	"go-dash/internal/http/response"
+	"go-dash/internal/logger"
 )
 
 type DashboardHandler struct {

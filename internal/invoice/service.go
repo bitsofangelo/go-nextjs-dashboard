@@ -6,8 +6,8 @@ import (
 
 	"github.com/google/uuid"
 
-	"go-nextjs-dashboard/internal/listing"
-	"go-nextjs-dashboard/internal/logger"
+	"go-dash/internal/listing"
+	"go-dash/internal/logger"
 )
 
 const (

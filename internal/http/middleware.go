@@ -12,9 +12,9 @@ import (
 	"github.com/gofiber/fiber/v3/middleware/limiter"
 	"github.com/google/uuid"
 
-	"go-nextjs-dashboard/internal/auth"
-	"go-nextjs-dashboard/internal/http/response"
-	"go-nextjs-dashboard/internal/http/validation"
+	"go-dash/internal/auth"
+	"go-dash/internal/http/response"
+	"go-dash/internal/http/validation"
 )
 
 func init() {

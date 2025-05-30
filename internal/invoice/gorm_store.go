@@ -10,10 +10,10 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
-	"go-nextjs-dashboard/internal/db"
-	"go-nextjs-dashboard/internal/listing"
-	"go-nextjs-dashboard/internal/logger"
-	"go-nextjs-dashboard/internal/optional"
+	"go-dash/internal/db"
+	"go-dash/internal/listing"
+	"go-dash/internal/logger"
+	"go-dash/internal/optional"
 )
 
 type invoiceModel struct {

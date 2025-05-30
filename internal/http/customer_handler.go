@@ -7,11 +7,11 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
 
-	"go-nextjs-dashboard/internal/customer"
-	"go-nextjs-dashboard/internal/http/request"
-	"go-nextjs-dashboard/internal/http/response"
-	"go-nextjs-dashboard/internal/http/validation"
-	"go-nextjs-dashboard/internal/logger"
+	"go-dash/internal/customer"
+	"go-dash/internal/http/request"
+	"go-dash/internal/http/response"
+	"go-dash/internal/http/validation"
+	"go-dash/internal/logger"
 )
 
 type CustomerHandler struct {

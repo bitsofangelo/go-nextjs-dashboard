@@ -9,8 +9,8 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
-	"go-nextjs-dashboard/internal/db"
-	"go-nextjs-dashboard/internal/logger"
+	"go-dash/internal/db"
+	"go-dash/internal/logger"
 )
 
 type GormRefreshStore struct {

@@ -1,6 +1,6 @@
 package http
 
-import "go-nextjs-dashboard/internal/auth"
+import "go-dash/internal/auth"
 
 type RouteInitializer struct{}
 

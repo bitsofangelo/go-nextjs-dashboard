@@ -1,6 +1,6 @@
 package response
 
-import "go-nextjs-dashboard/internal/app"
+import "go-dash/internal/app"
 
 type AccessToken struct {
 	AccessToken  string `json:"access_token"`

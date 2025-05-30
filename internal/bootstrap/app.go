@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	"go-nextjs-dashboard/internal/config"
-	"go-nextjs-dashboard/internal/event/bus"
-	"go-nextjs-dashboard/internal/http"
-	"go-nextjs-dashboard/internal/logger"
+	"go-dash/internal/config"
+	"go-dash/internal/event/bus"
+	"go-dash/internal/http"
+	"go-dash/internal/logger"
 )
 
 type Server interface {

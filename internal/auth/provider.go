@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	"go-nextjs-dashboard/internal/hashing"
-	"go-nextjs-dashboard/internal/user"
+	"go-dash/internal/hashing"
+	"go-dash/internal/user"
 )
 
 type PasswordCredentials struct {

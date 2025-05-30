@@ -7,8 +7,8 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
 
-	"go-nextjs-dashboard/internal/logger"
-	"go-nextjs-dashboard/internal/user"
+	"go-dash/internal/logger"
+	"go-dash/internal/user"
 )
 
 type UserHandler struct {

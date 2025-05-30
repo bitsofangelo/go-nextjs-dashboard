@@ -12,9 +12,9 @@ import (
 	"github.com/gofiber/fiber/v3/middleware/limiter"
 	"github.com/gofiber/fiber/v3/middleware/recover"
 
-	"go-nextjs-dashboard/internal/config"
-	"go-nextjs-dashboard/internal/http/response"
-	"go-nextjs-dashboard/internal/logger"
+	"go-dash/internal/config"
+	"go-dash/internal/http/response"
+	"go-dash/internal/logger"
 )
 
 type FiberServer struct {

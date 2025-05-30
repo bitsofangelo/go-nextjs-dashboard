@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"go-nextjs-dashboard/internal/customer"
-	"go-nextjs-dashboard/internal/event"
-	"go-nextjs-dashboard/internal/logger"
+	"go-dash/internal/customer"
+	"go-dash/internal/event"
+	"go-dash/internal/logger"
 )
 
 type RegisterInitializer struct{}

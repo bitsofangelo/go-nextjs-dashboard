@@ -8,20 +8,20 @@ package bootstrap
 
 import (
 	"context"
-	"go-nextjs-dashboard/internal/app"
-	"go-nextjs-dashboard/internal/auth"
-	"go-nextjs-dashboard/internal/config"
-	"go-nextjs-dashboard/internal/customer"
-	"go-nextjs-dashboard/internal/dashboard"
-	"go-nextjs-dashboard/internal/db"
-	"go-nextjs-dashboard/internal/event"
-	"go-nextjs-dashboard/internal/event/bus"
-	"go-nextjs-dashboard/internal/hashing"
-	"go-nextjs-dashboard/internal/http"
-	"go-nextjs-dashboard/internal/http/validation/gp"
-	"go-nextjs-dashboard/internal/invoice"
-	"go-nextjs-dashboard/internal/logger/slog"
-	"go-nextjs-dashboard/internal/user"
+	"go-dash/internal/app"
+	"go-dash/internal/auth"
+	"go-dash/internal/config"
+	"go-dash/internal/customer"
+	"go-dash/internal/dashboard"
+	"go-dash/internal/db"
+	"go-dash/internal/event"
+	"go-dash/internal/event/bus"
+	"go-dash/internal/hashing"
+	"go-dash/internal/http"
+	"go-dash/internal/http/validation/gp"
+	"go-dash/internal/invoice"
+	"go-dash/internal/logger/slog"
+	"go-dash/internal/user"
 )
 
 // Injectors from wire.go:
@@ -57,8 +57,8 @@ func InitializeApp(ctx context.Context) (*App, error) {
 	hash := hashing.New(argon2IDHasher)
 	passwordProvider := auth.NewPasswordProvider(userService, hash)
 	googleProvider := auth.NewGoogleProvider()
-	providerManager := auth.NewManager(passwordProvider, googleProvider)
-	authenticateUser := app.NewAuthenticateUser(providerManager, token, hash, userService)
+	manager := auth.NewManager(passwordProvider, googleProvider)
+	authenticateUser := app.NewAuthenticateUser(manager, token, hash)
 	authHandler := http.NewAuthHandler(authenticateUser)
 	dashboardGormStore := dashboard.NewStore(gormDB, logger)
 	dashboardService := dashboard.NewService(dashboardGormStore, logger)

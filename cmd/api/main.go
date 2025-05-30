@@ -8,7 +8,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"go-nextjs-dashboard/internal/bootstrap"
+	"go-dash/internal/bootstrap"
 )
 
 func main() {

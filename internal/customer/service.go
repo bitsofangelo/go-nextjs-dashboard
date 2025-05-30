@@ -7,8 +7,8 @@ import (
 
 	"github.com/google/uuid"
 
-	"go-nextjs-dashboard/internal/event"
-	"go-nextjs-dashboard/internal/logger"
+	"go-dash/internal/event"
+	"go-dash/internal/logger"
 )
 
 type Service struct {

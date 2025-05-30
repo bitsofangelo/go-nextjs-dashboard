@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"go-nextjs-dashboard/internal/auth"
-	"go-nextjs-dashboard/internal/hashing"
+	"go-dash/internal/auth"
+	"go-dash/internal/hashing"
 )
 
 type AccessToken struct {

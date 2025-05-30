@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"go-nextjs-dashboard/internal/customer"
-	"go-nextjs-dashboard/internal/db"
-	"go-nextjs-dashboard/internal/invoice"
-	"go-nextjs-dashboard/internal/logger"
+	"go-dash/internal/customer"
+	"go-dash/internal/db"
+	"go-dash/internal/invoice"
+	"go-dash/internal/logger"
 )
 
 type CreateInvoice struct {

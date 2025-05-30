@@ -5,7 +5,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"go-nextjs-dashboard/internal/invoice"
+	"go-dash/internal/invoice"
 )
 
 type Invoice struct {

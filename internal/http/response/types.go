@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"go-nextjs-dashboard/internal/listing"
+	"go-dash/internal/listing"
 )
 
 type Response[T any] struct {

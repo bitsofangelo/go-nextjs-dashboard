@@ -7,8 +7,8 @@ import (
 
 	"github.com/google/uuid"
 
-	"go-nextjs-dashboard/internal/listing"
-	"go-nextjs-dashboard/internal/optional"
+	"go-dash/internal/listing"
+	"go-dash/internal/optional"
 )
 
 var ErrInvoiceNotFound = errors.New("invoice not found")

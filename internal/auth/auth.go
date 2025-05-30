@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"go-nextjs-dashboard/internal/user"
+	"go-dash/internal/user"
 )
 
 var (

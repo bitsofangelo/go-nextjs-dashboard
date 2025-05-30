@@ -7,14 +7,14 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
 
-	"go-nextjs-dashboard/internal/app"
-	"go-nextjs-dashboard/internal/customer"
-	"go-nextjs-dashboard/internal/http/request"
-	"go-nextjs-dashboard/internal/http/response"
-	"go-nextjs-dashboard/internal/http/validation"
-	"go-nextjs-dashboard/internal/invoice"
-	"go-nextjs-dashboard/internal/listing"
-	"go-nextjs-dashboard/internal/logger"
+	"go-dash/internal/app"
+	"go-dash/internal/customer"
+	"go-dash/internal/http/request"
+	"go-dash/internal/http/response"
+	"go-dash/internal/http/validation"
+	"go-dash/internal/invoice"
+	"go-dash/internal/listing"
+	"go-dash/internal/logger"
 )
 
 type InvoiceHandler struct {

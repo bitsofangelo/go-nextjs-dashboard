@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"go-nextjs-dashboard/internal/logger"
+	"go-dash/internal/logger"
 )
 
 type Service struct {

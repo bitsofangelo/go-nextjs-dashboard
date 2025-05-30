@@ -13,8 +13,8 @@ import (
 	"gorm.io/gorm"
 	gormlogger "gorm.io/gorm/logger"
 
-	"go-nextjs-dashboard/internal/config"
-	"go-nextjs-dashboard/internal/logger"
+	"go-dash/internal/config"
+	"go-dash/internal/logger"
 )
 
 func Open(cfg *config.Config, log logger.Logger) (*gorm.DB, error) {

@@ -8,10 +8,10 @@ import (
 	"golang.org/x/sync/errgroup"
 	"gorm.io/gorm"
 
-	"go-nextjs-dashboard/internal/customer"
-	"go-nextjs-dashboard/internal/db"
-	"go-nextjs-dashboard/internal/invoice"
-	"go-nextjs-dashboard/internal/logger"
+	"go-dash/internal/customer"
+	"go-dash/internal/db"
+	"go-dash/internal/invoice"
+	"go-dash/internal/logger"
 )
 
 type revenueModel struct {

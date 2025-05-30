@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"sync"
 
-	"go-nextjs-dashboard/internal/logger"
+	"go-dash/internal/logger"
 )
 
 type Handler[T any] func(context.Context, T) error
