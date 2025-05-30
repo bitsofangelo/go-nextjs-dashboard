@@ -5,13 +5,13 @@ import (
 	"errors"
 	"fmt"
 
-	"go-dash/internal/hashing"
-	"go-dash/internal/user"
+	"github.com/gelozr/go-dash/internal/hashing"
+	"github.com/gelozr/go-dash/internal/user"
 )
 
 type PasswordCredentials struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
+	Username string
+	Password string
 }
 
 type PasswordProvider struct {
@@ -19,7 +19,7 @@ type PasswordProvider struct {
 	hash    *hashing.Hash
 }
 
-var _ Provider = (*PasswordProvider)(nil)
+var _ ProviderDriver = (*PasswordProvider)(nil)
 
 func NewPasswordProvider(userSvc *user.Service, hash *hashing.Hash) *PasswordProvider {
 	return &PasswordProvider{
@@ -62,7 +62,7 @@ type GoogleCredentials struct {
 type GoogleProvider struct {
 }
 
-var _ Provider = (*GoogleProvider)(nil)
+var _ ProviderDriver = (*GoogleProvider)(nil)
 
 func NewGoogleProvider() *GoogleProvider {
 	return &GoogleProvider{}

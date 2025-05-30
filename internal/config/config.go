@@ -32,6 +32,12 @@ type Config struct {
 	LogOutput string `mapstructure:"LOG_OUTPUT"` // "stdout" (default) | "./logs/app.log" | "/var/log/<app_name>/app.log
 
 	JWTHmacKey string `mapstructure:"JWT_HMAC_KEY"`
+
+	MailHost          string `mapstructure:"MAIL_HOST"`
+	MailPort          int    `mapstructure:"MAIL_PORT"`
+	MailUser          string `mapstructure:"MAIL_USER"`
+	MailPass          string `mapstructure:"MAIL_PASS"`
+	MailSkipTLSVerify bool   `mapstructure:"MAIL_SKIP_TLS_VERIFY"`
 }
 
 func Load() (*Config, error) {
@@ -48,7 +54,6 @@ func Load() (*Config, error) {
 	// Also allow real ENV to override
 	viper.AutomaticEnv()
 
-	// Unmarshal into your struct
 	var cfg Config
 	if err := viper.Unmarshal(&cfg); err != nil {
 		return nil, fmt.Errorf("unmarshal config: %w", err)

@@ -1,4 +1,4 @@
-module go-dash
+module github.com/gelozr/go-dash
 
 go 1.24.3
 

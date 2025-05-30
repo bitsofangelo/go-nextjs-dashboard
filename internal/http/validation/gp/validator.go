@@ -16,9 +16,9 @@ import (
 	enTrans "github.com/go-playground/validator/v10/translations/en"
 	frTrans "github.com/go-playground/validator/v10/translations/fr"
 
-	"go-dash/internal/http"
-	"go-dash/internal/http/validation"
-	"go-dash/internal/optional"
+	"github.com/gelozr/go-dash/internal/http"
+	"github.com/gelozr/go-dash/internal/http/validation"
+	"github.com/gelozr/go-dash/internal/optional"
 )
 
 type Validator struct {

@@ -5,7 +5,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"go-dash/internal/invoice"
+	"github.com/gelozr/go-dash/internal/invoice"
 )
 
 type Invoice struct {

@@ -5,8 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"go-dash/internal/auth"
-	"go-dash/internal/hashing"
+	"github.com/gelozr/go-dash/internal/auth"
 )
 
 type AccessToken struct {
@@ -16,33 +15,31 @@ type AccessToken struct {
 }
 
 type AuthenticateUser struct {
-	auth  auth.Auth
+	auth  auth.Authenticator
 	token *auth.Token
-	hash  *hashing.Hash
 }
 
-func NewAuthenticateUser(auth auth.Auth, token *auth.Token, hash *hashing.Hash) *AuthenticateUser {
+func NewAuthenticateUser(auth auth.Authenticator, token *auth.Token) *AuthenticateUser {
 	return &AuthenticateUser{
 		auth:  auth,
 		token: token,
-		hash:  hash,
 	}
 }
 
-func (u *AuthenticateUser) Execute(ctx context.Context, provider auth.ProviderType, creds auth.Credentials) (AccessToken, error) {
+func (u *AuthenticateUser) Execute(ctx context.Context, provider auth.Provider, creds auth.Credentials) (AccessToken, error) {
 	var accessToken AccessToken
 
-	usr, err := u.auth.Provider(provider).Authenticate(ctx, creds)
+	user, err := u.auth.Provider(provider).Authenticate(ctx, creds)
 	if err != nil {
 		return accessToken, fmt.Errorf("authenticate: %w", err)
 	}
 
-	jwt, exp, err := u.token.SignJWT(usr.ID)
+	jwt, exp, err := u.token.SignJWT(user.ID)
 	if err != nil {
 		return accessToken, fmt.Errorf("sign jwt: %w", err)
 	}
 
-	refresh, err := u.token.CreateRefresh(ctx, usr.ID)
+	refresh, err := u.token.CreateRefresh(ctx, user.ID)
 	if err != nil {
 		return accessToken, fmt.Errorf("create refresh token: %w", err)
 	}

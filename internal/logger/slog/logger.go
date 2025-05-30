@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"go-dash/internal/config"
-	"go-dash/internal/logger"
+	"github.com/gelozr/go-dash/internal/config"
+	"github.com/gelozr/go-dash/internal/logger"
 )
 
 type Logger struct {

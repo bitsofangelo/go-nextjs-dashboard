@@ -1,7 +1,7 @@
 package request
 
 import (
-	"go-dash/internal/customer"
+	"github.com/gelozr/go-dash/internal/customer"
 )
 
 type CreateCustomer struct {

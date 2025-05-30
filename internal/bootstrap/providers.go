@@ -6,22 +6,23 @@ import (
 
 	"github.com/google/wire"
 
-	"go-dash/internal/app"
-	"go-dash/internal/auth"
-	"go-dash/internal/config"
-	"go-dash/internal/customer"
-	"go-dash/internal/dashboard"
-	"go-dash/internal/db"
-	"go-dash/internal/event"
-	"go-dash/internal/event/bus"
-	"go-dash/internal/hashing"
-	"go-dash/internal/http"
-	"go-dash/internal/http/validation"
-	"go-dash/internal/http/validation/gp"
-	"go-dash/internal/invoice"
-	"go-dash/internal/logger"
-	"go-dash/internal/logger/slog"
-	"go-dash/internal/user"
+	"github.com/gelozr/go-dash/internal/app"
+	"github.com/gelozr/go-dash/internal/auth"
+	"github.com/gelozr/go-dash/internal/config"
+	"github.com/gelozr/go-dash/internal/customer"
+	"github.com/gelozr/go-dash/internal/dashboard"
+	"github.com/gelozr/go-dash/internal/db"
+	"github.com/gelozr/go-dash/internal/event"
+	"github.com/gelozr/go-dash/internal/event/bus"
+	"github.com/gelozr/go-dash/internal/hashing"
+	"github.com/gelozr/go-dash/internal/http"
+	"github.com/gelozr/go-dash/internal/http/validation"
+	"github.com/gelozr/go-dash/internal/http/validation/gp"
+	"github.com/gelozr/go-dash/internal/invoice"
+	"github.com/gelozr/go-dash/internal/logger"
+	"github.com/gelozr/go-dash/internal/logger/slog"
+	"github.com/gelozr/go-dash/internal/mail"
+	"github.com/gelozr/go-dash/internal/user"
 )
 
 var AppProviders = wire.NewSet(
@@ -52,11 +53,16 @@ var AppProviders = wire.NewSet(
 	wire.Bind(new(hashing.Hasher), new(*hashing.Argon2IDHasher)),
 	hashing.New,
 
+	// MAIL
+	mail.NewSMTPMailer,
+	mail.NewManager,
+	wire.Bind(new(mail.Sender), new(*mail.Manager)),
+
 	// AUTH
 	auth.NewPasswordProvider,
 	auth.NewGoogleProvider,
 	auth.NewManager,
-	wire.Bind(new(auth.Auth), new(*auth.Manager)),
+	wire.Bind(new(auth.Authenticator), new(*auth.Manager)),
 	auth.NewGormRefreshStore,
 	wire.Bind(new(auth.RefreshStore), new(*auth.GormRefreshStore)),
 	auth.NewGOJWT,

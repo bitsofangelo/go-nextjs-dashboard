@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	"go-dash/internal/bootstrap"
+	"github.com/gelozr/go-dash/internal/bootstrap"
 )
 
 func main() {

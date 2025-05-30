@@ -6,11 +6,11 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 
-	"go-dash/internal/app"
-	"go-dash/internal/auth"
-	"go-dash/internal/http/request"
-	"go-dash/internal/http/response"
-	"go-dash/internal/user"
+	"github.com/gelozr/go-dash/internal/app"
+	"github.com/gelozr/go-dash/internal/auth"
+	"github.com/gelozr/go-dash/internal/http/request"
+	"github.com/gelozr/go-dash/internal/http/response"
+	"github.com/gelozr/go-dash/internal/user"
 )
 
 type AuthHandler struct {

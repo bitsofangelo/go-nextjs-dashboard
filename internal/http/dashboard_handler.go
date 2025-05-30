@@ -6,9 +6,9 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 
-	"go-dash/internal/dashboard"
-	"go-dash/internal/http/response"
-	"go-dash/internal/logger"
+	"github.com/gelozr/go-dash/internal/dashboard"
+	"github.com/gelozr/go-dash/internal/http/response"
+	"github.com/gelozr/go-dash/internal/logger"
 )
 
 type DashboardHandler struct {

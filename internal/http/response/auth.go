@@ -1,6 +1,6 @@
 package response
 
-import "go-dash/internal/app"
+import "github.com/gelozr/go-dash/internal/app"
 
 type AccessToken struct {
 	AccessToken  string `json:"access_token"`

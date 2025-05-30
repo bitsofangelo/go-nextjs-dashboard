@@ -3,7 +3,7 @@ package response
 import (
 	"github.com/google/uuid"
 
-	"go-dash/internal/customer"
+	"github.com/gelozr/go-dash/internal/customer"
 )
 
 type Customer struct {

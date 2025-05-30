@@ -10,15 +10,15 @@ import (
 
 	"gorm.io/gorm"
 
-	"go-dash/internal/config"
-	"go-dash/internal/event/bus"
-	"go-dash/internal/http"
-	"go-dash/internal/logger"
+	"github.com/gelozr/go-dash/internal/config"
+	"github.com/gelozr/go-dash/internal/event/bus"
+	"github.com/gelozr/go-dash/internal/http"
+	"github.com/gelozr/go-dash/internal/logger"
 )
 
 type Server interface {
 	Serve() error
-	Shutdown(ctx context.Context) error
+	Shutdown(context.Context) error
 }
 
 type App struct {
@@ -50,8 +50,9 @@ func (a *App) Run() error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	srvErr := make(chan error)
+	srvErr := make(chan error, 1)
 
+	// run server in a goroutine
 	go func() {
 		if err := a.server.Serve(); err != nil {
 			srvErr <- fmt.Errorf("start server: %w", err)
@@ -68,7 +69,7 @@ func (a *App) Run() error {
 		shutCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
 
-		// shutdown fiber
+		// shutdown server
 		if err := a.server.Shutdown(shutCtx); err != nil {
 			return fmt.Errorf("graceful shutdown failed, forcing close: %w", err)
 		}

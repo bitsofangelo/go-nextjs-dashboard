@@ -2,13 +2,12 @@ package customer
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
 
-	"go-dash/internal/event"
-	"go-dash/internal/logger"
+	"github.com/gelozr/go-dash/internal/event"
+	"github.com/gelozr/go-dash/internal/logger"
 )
 
 type Service struct {
@@ -36,14 +35,14 @@ func (s *Service) List(ctx context.Context) ([]Customer, error) {
 }
 
 func (s *Service) GetByID(ctx context.Context, id uuid.UUID) (*Customer, error) {
-	return nil, errors.New("not implemented")
-	// c, err := s.store.Find(ctx, id)
-	//
-	// if err != nil {
-	// 	return nil, fmt.Errorf("find customer: %w", err)
-	// }
-	//
-	// return c, nil
+	// return nil, errors.New("not implemented")
+	c, err := s.store.Find(ctx, id)
+
+	if err != nil {
+		return nil, fmt.Errorf("find customer: %w", err)
+	}
+
+	return c, nil
 }
 
 func (s *Service) Exists(ctx context.Context, id uuid.UUID) (bool, error) {

@@ -8,7 +8,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 
-	"go-dash/internal/config"
+	"github.com/gelozr/go-dash/internal/config"
 )
 
 type JWTClaims struct {

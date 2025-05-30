@@ -1,6 +1,6 @@
 package http
 
-import "go-dash/internal/auth"
+import "github.com/gelozr/go-dash/internal/auth"
 
 type RouteInitializer struct{}
 

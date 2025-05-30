@@ -6,9 +6,9 @@ import (
 
 	"github.com/google/uuid"
 
-	"go-dash/internal/http/response"
-	"go-dash/internal/invoice"
-	"go-dash/internal/optional"
+	"github.com/gelozr/go-dash/internal/http/response"
+	"github.com/gelozr/go-dash/internal/invoice"
+	"github.com/gelozr/go-dash/internal/optional"
 )
 
 type CreateInvoice struct {

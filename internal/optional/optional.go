@@ -19,14 +19,12 @@ type Optional[T any] struct {
 	IsNull    bool
 }
 
-// UnmarshalJSON marks IsPresent=true, then
-//   - if data == "null" → IsNull=true
-//   - else → unmarshal into Val
+// UnmarshalJSON marks IsPresent=true if preset, otherwise false
+// if explicitly set to null the marks IsNull=true
 func (o *Optional[T]) UnmarshalJSON(data []byte) error {
 	o.IsPresent = true
 	if bytes.Equal(data, []byte("null")) {
 		o.IsNull = true
-		// zero value
 		var zero T
 		o.Val = zero
 		return nil
@@ -44,8 +42,6 @@ func (o *Optional[T]) MarshalJSON() ([]byte, error) {
 }
 
 // Value implements driver.Valuer for database writes.
-//   - nil → NULL
-//   - otherwise → underlying Val (must be a type driver accepts)
 func (o Optional[T]) Value() (driver.Value, error) {
 	if o.IsNull {
 		return nil, nil
@@ -70,8 +66,6 @@ func (o Optional[T]) Value() (driver.Value, error) {
 }
 
 // Scan implements sql.Scanner for database reads.
-//   - src == nil → IsNull=true
-//   - else → try to scan into T (either via T’s own Scanner or via a direct cast)
 func (o *Optional[T]) Scan(src any) error {
 	o.IsPresent = true
 	if src == nil {
@@ -82,7 +76,7 @@ func (o *Optional[T]) Scan(src any) error {
 	}
 	o.IsNull = false
 
-	// If T itself implements sql.Scanner, use that:
+	// use T if it implements scanner
 	if scanner, ok := any(&o.Val).(sql.Scanner); ok {
 		err := scanner.Scan(src)
 		if err != nil {
@@ -91,7 +85,7 @@ func (o *Optional[T]) Scan(src any) error {
 		return nil
 	}
 
-	// Otherwise try a direct conversion:
+	// direct conversion
 	if v, ok := src.(T); ok {
 		o.Val = v
 		return nil
@@ -112,9 +106,8 @@ func (o *Optional[T]) Scan(src any) error {
 		}
 	}
 
-	// Special‐case: many drivers return []byte for text columns
+	// for drivers that return []byte for text columns
 	if b, ok := src.([]byte); ok {
-		// only works if T is e.g. string or []byte
 		switch any(o.Val).(type) {
 		case string:
 			o.Val = any(string(b)).(T)

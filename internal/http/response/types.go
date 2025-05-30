@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"go-dash/internal/listing"
+	"github.com/gelozr/go-dash/internal/listing"
 )
 
 type Response[T any] struct {

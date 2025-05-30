@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"sync"
 
-	"go-dash/internal/logger"
+	"github.com/gelozr/go-dash/internal/logger"
 )
 
 type Handler[T any] func(context.Context, T) error

@@ -7,11 +7,11 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
 
-	"go-dash/internal/customer"
-	"go-dash/internal/http/request"
-	"go-dash/internal/http/response"
-	"go-dash/internal/http/validation"
-	"go-dash/internal/logger"
+	"github.com/gelozr/go-dash/internal/customer"
+	"github.com/gelozr/go-dash/internal/http/request"
+	"github.com/gelozr/go-dash/internal/http/response"
+	"github.com/gelozr/go-dash/internal/http/validation"
+	"github.com/gelozr/go-dash/internal/logger"
 )
 
 type CustomerHandler struct {

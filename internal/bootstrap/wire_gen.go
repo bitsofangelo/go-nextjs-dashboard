@@ -7,20 +7,21 @@
 package bootstrap
 
 import (
-	"go-dash/internal/app"
-	"go-dash/internal/auth"
-	"go-dash/internal/config"
-	"go-dash/internal/customer"
-	"go-dash/internal/dashboard"
-	"go-dash/internal/db"
-	"go-dash/internal/event"
-	"go-dash/internal/event/bus"
-	"go-dash/internal/hashing"
-	"go-dash/internal/http"
-	"go-dash/internal/http/validation/gp"
-	"go-dash/internal/invoice"
-	"go-dash/internal/logger/slog"
-	"go-dash/internal/user"
+	"github.com/gelozr/go-dash/internal/app"
+	"github.com/gelozr/go-dash/internal/auth"
+	"github.com/gelozr/go-dash/internal/config"
+	"github.com/gelozr/go-dash/internal/customer"
+	"github.com/gelozr/go-dash/internal/dashboard"
+	"github.com/gelozr/go-dash/internal/db"
+	"github.com/gelozr/go-dash/internal/event"
+	"github.com/gelozr/go-dash/internal/event/bus"
+	"github.com/gelozr/go-dash/internal/hashing"
+	"github.com/gelozr/go-dash/internal/http"
+	"github.com/gelozr/go-dash/internal/http/validation/gp"
+	"github.com/gelozr/go-dash/internal/invoice"
+	"github.com/gelozr/go-dash/internal/logger/slog"
+	"github.com/gelozr/go-dash/internal/mail"
+	"github.com/gelozr/go-dash/internal/user"
 )
 
 // Injectors from wire.go:
@@ -46,7 +47,9 @@ func InitializeApp() (*App, error) {
 	broker := event.NewBroker()
 	gormStore := customer.NewStore(gormDB, logger)
 	service := customer.NewService(gormStore, broker, logger)
-	registerInitializer := bus.RegisterAll(broker, service, logger)
+	smtpMailer := mail.NewSMTPMailer(configConfig)
+	manager := mail.NewManager(smtpMailer)
+	registerInitializer := bus.RegisterAll(broker, service, manager, logger)
 	gojwt := auth.NewGOJWT(configConfig)
 	gormRefreshStore := auth.NewGormRefreshStore(gormDB, logger)
 	token := auth.NewToken(gojwt, gormRefreshStore)
@@ -56,8 +59,8 @@ func InitializeApp() (*App, error) {
 	hash := hashing.New(argon2IDHasher)
 	passwordProvider := auth.NewPasswordProvider(userService, hash)
 	googleProvider := auth.NewGoogleProvider()
-	manager := auth.NewManager(passwordProvider, googleProvider)
-	authenticateUser := app.NewAuthenticateUser(manager, token, hash)
+	authManager := auth.NewManager(passwordProvider, googleProvider)
+	authenticateUser := app.NewAuthenticateUser(authManager, token)
 	authHandler := http.NewAuthHandler(authenticateUser)
 	dashboardGormStore := dashboard.NewStore(gormDB, logger)
 	dashboardService := dashboard.NewService(dashboardGormStore, logger)

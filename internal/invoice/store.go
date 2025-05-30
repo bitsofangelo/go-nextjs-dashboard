@@ -7,8 +7,8 @@ import (
 
 	"github.com/google/uuid"
 
-	"go-dash/internal/listing"
-	"go-dash/internal/optional"
+	"github.com/gelozr/go-dash/internal/listing"
+	"github.com/gelozr/go-dash/internal/optional"
 )
 
 var ErrInvoiceNotFound = errors.New("invoice not found")

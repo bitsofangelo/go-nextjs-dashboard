@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"go-dash/internal/customer"
-	"go-dash/internal/db"
-	"go-dash/internal/invoice"
-	"go-dash/internal/logger"
+	"github.com/gelozr/go-dash/internal/customer"
+	"github.com/gelozr/go-dash/internal/db"
+	"github.com/gelozr/go-dash/internal/invoice"
+	"github.com/gelozr/go-dash/internal/logger"
 )
 
 type CreateInvoice struct {

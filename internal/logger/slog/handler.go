@@ -4,7 +4,7 @@ import (
 	"context"
 	"log/slog"
 
-	"go-dash/internal/http"
+	"github.com/gelozr/go-dash/internal/http"
 )
 
 type ctxHandler struct {

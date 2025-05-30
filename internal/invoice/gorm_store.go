@@ -10,10 +10,10 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
-	"go-dash/internal/db"
-	"go-dash/internal/listing"
-	"go-dash/internal/logger"
-	"go-dash/internal/optional"
+	"github.com/gelozr/go-dash/internal/db"
+	"github.com/gelozr/go-dash/internal/listing"
+	"github.com/gelozr/go-dash/internal/logger"
+	"github.com/gelozr/go-dash/internal/optional"
 )
 
 type invoiceModel struct {

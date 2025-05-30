@@ -7,8 +7,8 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
 
-	"go-dash/internal/logger"
-	"go-dash/internal/user"
+	"github.com/gelozr/go-dash/internal/logger"
+	"github.com/gelozr/go-dash/internal/user"
 )
 
 type UserHandler struct {

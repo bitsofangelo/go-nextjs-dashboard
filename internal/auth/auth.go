@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"go-dash/internal/user"
+	"github.com/gelozr/go-dash/internal/user"
 )
 
 var (
@@ -17,31 +17,31 @@ var (
 	ErrJWTInvalid        = errors.New("JWT is invalid")
 )
 
-type ProviderType int
+type Provider int
 
 const (
-	ProviderPassword ProviderType = iota
+	ProviderPassword Provider = iota
 	ProviderGoogle
 )
 
 type Credentials any
 
-type Provider interface {
+type ProviderDriver interface {
 	Authenticate(context.Context, Credentials) (*user.User, error)
 }
 
-type Auth interface {
+type Authenticator interface {
 	Authenticate(context.Context, Credentials) (*user.User, error)
-	Provider(ProviderType) Provider
+	Provider(Provider) ProviderDriver
 }
 
 type Manager struct {
 	passwordProvider *PasswordProvider
 	googleProvider   *GoogleProvider
-	def              ProviderType
+	def              Provider
 }
 
-var _ Auth = (*Manager)(nil)
+var _ Authenticator = (*Manager)(nil)
 
 func NewManager(passwordProvider *PasswordProvider, googleProvider *GoogleProvider) *Manager {
 	return &Manager{
@@ -51,7 +51,7 @@ func NewManager(passwordProvider *PasswordProvider, googleProvider *GoogleProvid
 	}
 }
 
-func (p *Manager) Provider(provider ProviderType) Provider {
+func (p *Manager) Provider(provider Provider) ProviderDriver {
 	switch provider {
 	case ProviderGoogle:
 		return p.googleProvider

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sort"
 
-	"go-dash/internal/logger"
+	"github.com/gelozr/go-dash/internal/logger"
 )
 
 type Service struct {

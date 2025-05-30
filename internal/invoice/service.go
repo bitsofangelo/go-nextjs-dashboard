@@ -6,8 +6,8 @@ import (
 
 	"github.com/google/uuid"
 
-	"go-dash/internal/listing"
-	"go-dash/internal/logger"
+	"github.com/gelozr/go-dash/internal/listing"
+	"github.com/gelozr/go-dash/internal/logger"
 )
 
 var ErrInvalidCustomerID = fmt.Errorf("invalid customer id")

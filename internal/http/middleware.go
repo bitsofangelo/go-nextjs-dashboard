@@ -12,9 +12,9 @@ import (
 	"github.com/gofiber/fiber/v3/middleware/limiter"
 	"github.com/google/uuid"
 
-	"go-dash/internal/auth"
-	"go-dash/internal/http/response"
-	"go-dash/internal/http/validation"
+	"github.com/gelozr/go-dash/internal/auth"
+	"github.com/gelozr/go-dash/internal/http/response"
+	"github.com/gelozr/go-dash/internal/http/validation"
 )
 
 func init() {

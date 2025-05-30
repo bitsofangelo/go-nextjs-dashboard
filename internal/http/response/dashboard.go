@@ -1,6 +1,6 @@
 package response
 
-import "go-dash/internal/dashboard"
+import "github.com/gelozr/go-dash/internal/dashboard"
 
 type Overview struct {
 	InvoiceCount  int64 `json:"invoice_count"`
