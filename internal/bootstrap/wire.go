@@ -7,7 +7,7 @@ import (
 	"github.com/google/wire"
 )
 
-func InitializeApp() (*App, error) {
+func InitApp() (*App, error) {
 	wire.Build(
 		AppProviders,
 		HTTPProviders,

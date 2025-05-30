@@ -11,7 +11,7 @@ import (
 
 func main() {
 	// init app
-	app, err := bootstrap.InitializeApp()
+	app, err := bootstrap.InitApp()
 	if err != nil {
 		log.Fatalf("failed to initialize app %v", err)
 	}
