@@ -16,12 +16,12 @@ type AccessToken struct {
 }
 
 type AuthenticateUser struct {
-	auth  auth.Manager
+	auth  auth.Auth
 	token *auth.Token
 	hash  *hashing.Hash
 }
 
-func NewAuthenticateUser(auth auth.Manager, token *auth.Token, hash *hashing.Hash) *AuthenticateUser {
+func NewAuthenticateUser(auth auth.Auth, token *auth.Token, hash *hashing.Hash) *AuthenticateUser {
 	return &AuthenticateUser{
 		auth:  auth,
 		token: token,
@@ -29,7 +29,7 @@ func NewAuthenticateUser(auth auth.Manager, token *auth.Token, hash *hashing.Has
 	}
 }
 
-func (u *AuthenticateUser) Execute(ctx context.Context, provider auth.Provider, creds auth.Credentials) (AccessToken, error) {
+func (u *AuthenticateUser) Execute(ctx context.Context, provider auth.ProviderType, creds auth.Credentials) (AccessToken, error) {
 	var accessToken AccessToken
 
 	usr, err := u.auth.Provider(provider).Authenticate(ctx, creds)

@@ -19,7 +19,7 @@ type PasswordProvider struct {
 	hash    *hashing.Hash
 }
 
-var _ Authenticator = (*PasswordProvider)(nil)
+var _ Provider = (*PasswordProvider)(nil)
 
 func NewPasswordProvider(userSvc *user.Service, hash *hashing.Hash) *PasswordProvider {
 	return &PasswordProvider{
@@ -62,7 +62,7 @@ type GoogleCredentials struct {
 type GoogleProvider struct {
 }
 
-var _ Authenticator = (*GoogleProvider)(nil)
+var _ Provider = (*GoogleProvider)(nil)
 
 func NewGoogleProvider() *GoogleProvider {
 	return &GoogleProvider{}

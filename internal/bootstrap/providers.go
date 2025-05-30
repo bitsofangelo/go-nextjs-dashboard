@@ -56,7 +56,7 @@ var AppProviders = wire.NewSet(
 	auth.NewPasswordProvider,
 	auth.NewGoogleProvider,
 	auth.NewManager,
-	wire.Bind(new(auth.Manager), new(*auth.ProviderManager)),
+	wire.Bind(new(auth.Auth), new(*auth.Manager)),
 	auth.NewGormRefreshStore,
 	wire.Bind(new(auth.RefreshStore), new(*auth.GormRefreshStore)),
 	auth.NewGOJWT,

@@ -35,7 +35,7 @@ func (h *AuthHandler) Login(c fiber.Ctx) error {
 		Password: login.Password,
 	}
 
-	token, err := h.authUser.Execute(c.Context(), auth.ProviderPassword, creds)
+	accessToken, err := h.authUser.Execute(c.Context(), auth.ProviderPassword, creds)
 	if err != nil {
 		switch {
 		case errors.Is(err, user.ErrUserNotFound), errors.Is(err, auth.ErrPasswordIncorrect):
@@ -46,6 +46,6 @@ func (h *AuthHandler) Login(c fiber.Ctx) error {
 	}
 
 	return c.JSON(
-		response.New(response.ToAccessToken(token)),
+		response.New(response.ToAccessToken(accessToken)),
 	)
 }

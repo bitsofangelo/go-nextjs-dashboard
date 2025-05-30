@@ -17,41 +17,41 @@ var (
 	ErrJWTInvalid        = errors.New("JWT is invalid")
 )
 
-type Provider int
+type ProviderType int
 
 const (
-	ProviderPassword Provider = iota
+	ProviderPassword ProviderType = iota
 	ProviderGoogle
 )
 
 type Credentials any
 
-type Authenticator interface {
+type Provider interface {
 	Authenticate(context.Context, Credentials) (*user.User, error)
 }
 
-type Manager interface {
-	Authenticator
-	Provider(Provider) Authenticator
+type Auth interface {
+	Authenticate(context.Context, Credentials) (*user.User, error)
+	Provider(ProviderType) Provider
 }
 
-type ProviderManager struct {
+type Manager struct {
 	passwordProvider *PasswordProvider
 	googleProvider   *GoogleProvider
-	def              Provider
+	def              ProviderType
 }
 
-var _ Manager = (*ProviderManager)(nil)
+var _ Auth = (*Manager)(nil)
 
-func NewManager(passwordProvider *PasswordProvider, googleProvider *GoogleProvider) *ProviderManager {
-	return &ProviderManager{
+func NewManager(passwordProvider *PasswordProvider, googleProvider *GoogleProvider) *Manager {
+	return &Manager{
 		passwordProvider: passwordProvider,
 		googleProvider:   googleProvider,
 		def:              ProviderPassword,
 	}
 }
 
-func (p *ProviderManager) Provider(provider Provider) Authenticator {
+func (p *Manager) Provider(provider ProviderType) Provider {
 	switch provider {
 	case ProviderGoogle:
 		return p.googleProvider
@@ -60,7 +60,7 @@ func (p *ProviderManager) Provider(provider Provider) Authenticator {
 	}
 }
 
-func (p *ProviderManager) Authenticate(ctx context.Context, credentials Credentials) (*user.User, error) {
+func (p *Manager) Authenticate(ctx context.Context, credentials Credentials) (*user.User, error) {
 	return p.Provider(p.def).Authenticate(ctx, credentials)
 }
 
