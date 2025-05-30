@@ -8,24 +8,15 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
+	"go-dash/internal/db"
 	"go-dash/internal/logger"
 )
 
 type userModel struct {
-	ID       uuid.UUID `json:"id" gormstore:"type:char(36);not nullable;unique;primary_key"`
-	Name     string    `json:"name" gormstore:"type:varchar(255);not nullable"`
-	Email    string    `json:"email" gormstore:"type:varchar(255);not nullable;unique"`
-	Password string    `json:"-" gormstore:"type:text;not nullable"`
-}
-
-func (user *User) BeforeCreate(tx *gorm.DB) (err error) {
-	// user.ID = uuid.New()
-	// hashedPassword, err := auth.HashPassword(user.Password)
-	// if err != nil {
-	// 	return
-	// }
-	// user.Password = hashedPassword
-	return
+	ID       uuid.UUID `json:"id" gorm:"type:char(36);not nullable;unique;primary_key"`
+	Name     string    `json:"name" gorm:"type:varchar(255);not nullable"`
+	Email    string    `json:"email" gorm:"type:varchar(255);not nullable;unique"`
+	Password string    `json:"-" gorm:"type:text;not nullable"`
 }
 
 type GormStore struct {
@@ -42,10 +33,17 @@ func NewStore(db *gorm.DB, log logger.Logger) *GormStore {
 	}
 }
 
-func (s GormStore) FindByEmail(ctx context.Context, email string) (*User, error) {
+func (s *GormStore) DB(ctx context.Context) *gorm.DB {
+	if gormDB, ok := db.FromCtx(ctx); ok {
+		return gormDB
+	}
+	return s.db
+}
+
+func (s *GormStore) FindByEmail(ctx context.Context, email string) (*User, error) {
 	var u User
 
-	if err := s.db.First(&u, "email = ?", email).Error; err != nil {
+	if err := s.DB(ctx).First(&u, "email = ?", email).Error; err != nil {
 		switch {
 		case errors.Is(err, gorm.ErrRecordNotFound):
 			return nil, ErrUserNotFound

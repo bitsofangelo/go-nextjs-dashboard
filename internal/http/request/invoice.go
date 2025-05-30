@@ -1,7 +1,6 @@
 package request
 
 import (
-	"context"
 	"net/http"
 	"time"
 
@@ -48,11 +47,6 @@ type UpdateInvoice struct {
 	// Date Optional[nullable.Null[string]] `json:"date" validate:"omitnil,required,rfc3339"`
 	// Date       Optional[nullable.Null[string]] `json:"date" validate:"omitnil,required,rfc3339"`
 	// IsActive optional.Optional[*bool]   `json:"is_active" validate:"omitnil,boolean"`
-}
-
-func (req *UpdateInvoice) Validate(ctx context.Context) error {
-	// return validator.StructCtx(ctx, req)
-	return nil
 }
 
 func (req *UpdateInvoice) ToDTO() (invoice.UpdateInput, error) {

@@ -10,10 +10,6 @@ import (
 	"go-dash/internal/logger"
 )
 
-const (
-	defaultLimit = 50
-)
-
 var ErrInvalidCustomerID = fmt.Errorf("invalid customer id")
 
 type Service struct {
