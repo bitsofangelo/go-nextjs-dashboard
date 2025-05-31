@@ -75,7 +75,6 @@ func fiberErrHandler(cfg *config.Config, logger logger.Logger) fiber.ErrorHandle
 		case errors.As(err, &fe) && fe.Code != code:
 			code = fe.Code
 			message = fe.Message
-
 		case errors.As(err, &jsonSynErr):
 			code = fiber.StatusBadRequest
 			message = "Invalid JSON"
