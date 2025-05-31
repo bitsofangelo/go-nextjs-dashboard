@@ -26,8 +26,9 @@ func init() {
 type ctxKey string
 
 var (
-	reqIDKey  ctxKey = "req_id"
-	reqLocale ctxKey = "req_locale"
+	reqIDCtxKey     = ctxKey("req_id")
+	reqLocaleCtxKey = ctxKey("req_locale")
+	loggerCtxKey    = ctxKey("logger_key")
 )
 
 func AuthMiddleware(token *auth.Token) fiber.Handler {
@@ -97,7 +98,7 @@ func RequestID() fiber.Handler {
 			id = uuid.NewString()
 		}
 
-		ctx := context.WithValue(c.Context(), reqIDKey, id)
+		ctx := context.WithValue(c.Context(), reqIDCtxKey, id)
 		c.SetContext(ctx)
 
 		c.Request().Header.Set(hdr, id)
@@ -116,7 +117,7 @@ func RequestLocale() fiber.Handler {
 			l = "en"
 		}
 
-		ctx := context.WithValue(c.Context(), reqLocale, l)
+		ctx := context.WithValue(c.Context(), reqLocaleCtxKey, l)
 		c.SetContext(ctx)
 
 		return c.Next()
@@ -134,7 +135,7 @@ func rateLimiter(max ...int) fiber.Handler {
 
 func loggerKeyMiddleware(key string) fiber.Handler {
 	return func(c fiber.Ctx) error {
-		ctx := context.WithValue(c.Context(), "logger_key", key)
+		ctx := context.WithValue(c.Context(), loggerCtxKey, key)
 		c.SetContext(ctx)
 		return c.Next()
 	}

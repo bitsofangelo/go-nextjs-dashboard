@@ -2,7 +2,6 @@ package http
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/gofiber/fiber/v3"
 
@@ -24,7 +23,6 @@ func NewDashboardHandler(svc *dashboard.Service, log logger.Logger) *DashboardHa
 }
 
 func (h *DashboardHandler) GetOverview(c fiber.Ctx) error {
-	time.Sleep(5 * time.Second)
 	o, err := h.svc.GetOverview(c.Context())
 	if err != nil {
 		return fmt.Errorf("get overview: %w", err)

@@ -59,10 +59,8 @@ var AppProviders = wire.NewSet(
 	wire.Bind(new(mail.Sender), new(*mail.Manager)),
 
 	// AUTH
-	auth.NewPasswordProvider,
-	auth.NewGoogleProvider,
-	auth.NewManager,
-	wire.Bind(new(auth.Authenticator), new(*auth.Manager)),
+	AuthDBProvider,
+	wire.Bind(new(auth.Authenticator[user.User]), new(*auth.DBProvider[user.User])),
 	auth.NewGormRefreshStore,
 	wire.Bind(new(auth.RefreshStore), new(*auth.GormRefreshStore)),
 	auth.NewGOJWT,
@@ -117,4 +115,8 @@ func setTimezone(cfg *config.Config) (timezoneInitializer, error) {
 	time.Local = loc
 
 	return timezoneInitializer{}, nil
+}
+
+func AuthDBProvider(userSvc *user.Service, hash *hashing.Hash) *auth.DBProvider[user.User] {
+	return auth.NewDBProvider[user.User](userSvc, hash)
 }

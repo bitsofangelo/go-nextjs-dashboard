@@ -59,7 +59,9 @@ type TxManager interface {
 	Do(context.Context, func(context.Context) error) error
 }
 
-var dbTxKey = "db_tx_key"
+type ctxKey string
+
+var dbTxKey = ctxKey("db_tx_key")
 
 type GormTxManager struct {
 	db *gorm.DB

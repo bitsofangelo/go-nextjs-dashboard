@@ -7,8 +7,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-
-	"github.com/gelozr/go-dash/internal/user"
 )
 
 var (
@@ -17,51 +15,13 @@ var (
 	ErrJWTInvalid        = errors.New("JWT is invalid")
 )
 
-type Provider int
-
-const (
-	ProviderPassword Provider = iota
-	ProviderGoogle
-)
-
-type Credentials any
-
-type ProviderDriver interface {
-	Authenticate(context.Context, Credentials) (*user.User, error)
+type PasswordCredentials struct {
+	Email    string
+	Password string
 }
 
-type Authenticator interface {
-	Authenticate(context.Context, Credentials) (*user.User, error)
-	Provider(Provider) ProviderDriver
-}
-
-type Manager struct {
-	passwordProvider *PasswordProvider
-	googleProvider   *GoogleProvider
-	def              Provider
-}
-
-var _ Authenticator = (*Manager)(nil)
-
-func NewManager(passwordProvider *PasswordProvider, googleProvider *GoogleProvider) *Manager {
-	return &Manager{
-		passwordProvider: passwordProvider,
-		googleProvider:   googleProvider,
-		def:              ProviderPassword,
-	}
-}
-
-func (p *Manager) Provider(provider Provider) ProviderDriver {
-	switch provider {
-	case ProviderGoogle:
-		return p.googleProvider
-	default:
-		return p.passwordProvider
-	}
-}
-
-func (p *Manager) Authenticate(ctx context.Context, credentials Credentials) (*user.User, error) {
-	return p.Provider(p.def).Authenticate(ctx, credentials)
+type Authenticator[U any] interface {
+	Authenticate(context.Context, PasswordCredentials) (*U, error)
 }
 
 type JWT interface {

@@ -10,13 +10,13 @@ type Response struct {
 }
 
 func ReqID(ctx context.Context) (string, bool) {
-	v, ok := ctx.Value(reqIDKey).(ctxKey)
-	return string(v), ok
+	v, ok := ctx.Value(reqIDCtxKey).(string)
+	return v, ok
 }
 
 func Locale(ctx context.Context, def ...string) string {
-	if v, ok := ctx.Value(reqLocale).(ctxKey); ok {
-		return string(v)
+	if v, ok := ctx.Value(reqLocaleCtxKey).(string); ok {
+		return v
 	}
 
 	if len(def) > 0 {

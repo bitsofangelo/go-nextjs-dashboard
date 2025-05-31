@@ -9,32 +9,22 @@ import (
 	"github.com/gelozr/go-dash/internal/user"
 )
 
-type PasswordCredentials struct {
-	Username string
-	Password string
-}
-
-type PasswordProvider struct {
+type DBProvider[U any] struct {
 	userSvc *user.Service
 	hash    *hashing.Hash
 }
 
-var _ ProviderDriver = (*PasswordProvider)(nil)
+var _ Authenticator[any] = (*DBProvider[any])(nil)
 
-func NewPasswordProvider(userSvc *user.Service, hash *hashing.Hash) *PasswordProvider {
-	return &PasswordProvider{
+func NewDBProvider[U any](userSvc *user.Service, hash *hashing.Hash) *DBProvider[U] {
+	return &DBProvider[U]{
 		userSvc: userSvc,
 		hash:    hash,
 	}
 }
 
-func (p PasswordProvider) Authenticate(ctx context.Context, credentials Credentials) (*user.User, error) {
-	creds, ok := credentials.(PasswordCredentials)
-	if !ok {
-		return nil, errors.New("invalid credentials type")
-	}
-
-	u, err := p.userSvc.GetByEmail(ctx, creds.Username)
+func (p DBProvider[U]) Authenticate(ctx context.Context, creds PasswordCredentials) (*U, error) {
+	u, err := p.userSvc.GetByEmail(ctx, creds.Email)
 	if err != nil {
 		switch {
 		case errors.Is(err, user.ErrUserNotFound):
@@ -49,25 +39,8 @@ func (p PasswordProvider) Authenticate(ctx context.Context, credentials Credenti
 		return nil, fmt.Errorf("check password hash: %w", err)
 	}
 	if !match {
-		return u, ErrPasswordIncorrect
+		return any(u).(*U), ErrPasswordIncorrect
 	}
 
-	return u, nil
-}
-
-type GoogleCredentials struct {
-	IDToken string `json:"id_token"`
-}
-
-type GoogleProvider struct {
-}
-
-var _ ProviderDriver = (*GoogleProvider)(nil)
-
-func NewGoogleProvider() *GoogleProvider {
-	return &GoogleProvider{}
-}
-
-func (p GoogleProvider) Authenticate(ctx context.Context, credentials Credentials) (*user.User, error) {
-	return nil, errors.New("not implemented")
+	return any(u).(*U), nil
 }

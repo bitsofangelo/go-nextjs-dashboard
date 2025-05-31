@@ -31,11 +31,11 @@ func (h *AuthHandler) Login(c fiber.Ctx) error {
 	}
 
 	creds := auth.PasswordCredentials{
-		Username: login.Username,
+		Email:    login.Username,
 		Password: login.Password,
 	}
 
-	accessToken, err := h.authUser.Execute(c.Context(), auth.ProviderPassword, creds)
+	accessToken, err := h.authUser.Execute(c.Context(), creds)
 	if err != nil {
 		switch {
 		case errors.Is(err, user.ErrUserNotFound), errors.Is(err, auth.ErrPasswordIncorrect):

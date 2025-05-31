@@ -82,11 +82,11 @@ func fiberErrHandler(cfg *config.Config, logger logger.Logger) fiber.ErrorHandle
 		}
 
 		if code >= fiber.StatusInternalServerError {
-			var lKey = "http"
-			if loggerKey, ok := c.Context().Value("logger_key").(string); ok {
-				lKey = loggerKey
+			l := "http"
+			if loggerKey, ok := c.Context().Value(loggerCtxKey).(string); ok {
+				l = loggerKey
 			}
-			logger.With("component", lKey).ErrorContext(c.Context(), message, "error", err.Error())
+			logger.With("component", l).ErrorContext(c.Context(), message, "error", err.Error())
 		}
 
 		var resp struct {
