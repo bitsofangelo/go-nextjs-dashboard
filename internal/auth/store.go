@@ -19,10 +19,10 @@ type RefreshStore interface {
 }
 
 type RefreshSession struct {
-	ID        uuid.UUID // refresh token sent to the client
+	ID        uuid.UUID
 	UserID    uuid.UUID
 	ExpiresAt time.Time
-	Used      bool // single-use rotation flag
+	Used      bool
 	CreatedAt time.Time
 }
 

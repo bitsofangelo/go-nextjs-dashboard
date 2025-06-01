@@ -2,6 +2,7 @@ package bootstrap
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -61,10 +62,10 @@ func (a *App) Run() error {
 	select {
 	case err := <-srvErr:
 		return err
-	case <-ctx.Done(): // block until shutdown signal is received
+	case <-ctx.Done():
 		a.logger.With("component", "server").Info("shutdown signal received")
 
-		// give other goroutines time to finish (DB, jobs, etc.)
+		// give other goroutines time to finish
 		shutCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
 
@@ -81,13 +82,15 @@ func (a *App) Logger() logger.Logger {
 }
 
 func (a *App) Close() error {
+	var errs []error
+
 	if err := a.logger.Close(); err != nil {
-		return fmt.Errorf("failed to close logger: %w", err)
+		errs = append(errs, fmt.Errorf("failed to close logger: %w", err))
 	}
 
 	if err := a.dbCloser.Close(); err != nil {
-		return fmt.Errorf("failed to close database: %w", err)
+		errs = append(errs, fmt.Errorf("failed to close database: %w", err))
 	}
 
-	return nil
+	return errors.Join(errs...)
 }

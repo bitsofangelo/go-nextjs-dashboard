@@ -39,7 +39,7 @@ func (p DBProvider[U]) Authenticate(ctx context.Context, creds PasswordCredentia
 		return nil, fmt.Errorf("check password hash: %w", err)
 	}
 	if !match {
-		return any(u).(*U), ErrPasswordIncorrect
+		return nil, ErrPasswordIncorrect
 	}
 
 	return any(u).(*U), nil

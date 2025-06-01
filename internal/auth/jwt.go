@@ -32,7 +32,7 @@ func (g *GOJWT) Sign(uid uuid.UUID) (string, time.Time, error) {
 	claims := JWTClaims{
 		UserID: uid,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ID:        uuid.NewString(), // jti
+			ID:        uuid.NewString(),
 			Issuer:    "myapp",
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(15 * time.Minute)),
@@ -82,11 +82,6 @@ func (g *GOJWT) Parse(tokenStr string) (AccessClaims, error) {
 		ID:       ac.ID,
 		UserID:   ac.UserID,
 	}
-
-	// OPTIONAL: check deny-list
-	// if revoked, _ := redisClient.Get(ctx, "block:"+claims.ID).Result(); revoked == "1" {
-	// 	return nil, fmt.Errorf("token revoked")
-	// }
 
 	return claims, nil
 }

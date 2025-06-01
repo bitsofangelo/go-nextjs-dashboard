@@ -28,8 +28,8 @@ type Config struct {
 
 	LogLevel  string `mapstructure:"LOG_LEVEL"`  // "debug" | "info" | "warn" | "error"
 	LogFormat string `mapstructure:"LOG_FORMAT"` // "text" | "json"
-	LogPath   string `mapstructure:"LOG_PATH"`
-	LogOutput string `mapstructure:"LOG_OUTPUT"` // "stdout" (default) | "./logs/app.log" | "/var/log/<app_name>/app.log
+	LogPath   string `mapstructure:"LOG_PATH"`   // "./logs/app.log" | "/var/log/<app_name>/app.log"
+	LogOutput string `mapstructure:"LOG_OUTPUT"` // "stdout" (default) | "file"
 
 	JWTHmacKey string `mapstructure:"JWT_HMAC_KEY"`
 
@@ -51,7 +51,7 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("no .env variables found")
 	}
 
-	// Also allow real ENV to override
+	// allow real ENV to override
 	viper.AutomaticEnv()
 
 	var cfg Config
