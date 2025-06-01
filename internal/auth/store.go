@@ -25,3 +25,9 @@ type RefreshSession struct {
 	Used      bool // single-use rotation flag
 	CreatedAt time.Time
 }
+
+type UpdateRefreshInput struct {
+	UserID    uuid.UUID
+	ExpiresAt time.Time
+	Used      bool
+}

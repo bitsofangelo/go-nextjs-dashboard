@@ -14,7 +14,7 @@ import (
 	"github.com/gelozr/go-dash/internal/dashboard"
 	"github.com/gelozr/go-dash/internal/db"
 	"github.com/gelozr/go-dash/internal/event"
-	"github.com/gelozr/go-dash/internal/event/bus"
+	"github.com/gelozr/go-dash/internal/event/registry"
 	"github.com/gelozr/go-dash/internal/hashing"
 	"github.com/gelozr/go-dash/internal/http"
 	"github.com/gelozr/go-dash/internal/http/validation/gp"
@@ -49,7 +49,7 @@ func InitApp() (*App, error) {
 	service := customer.NewService(gormStore, broker, logger)
 	smtpMailer := mail.NewSMTPMailer(configConfig)
 	manager := mail.NewManager(smtpMailer)
-	registerInitializer := bus.RegisterAll(broker, service, manager, logger)
+	registerInitializer := registry.RegisterAll(broker, service, manager, logger)
 	gojwt := auth.NewGOJWT(configConfig)
 	gormRefreshStore := auth.NewGormRefreshStore(gormDB, logger)
 	token := auth.NewToken(gojwt, gormRefreshStore)
@@ -64,7 +64,7 @@ func InitApp() (*App, error) {
 	if err != nil {
 		return nil, err
 	}
-	authHandler := http.NewAuthHandler(dbProvider, authenticateUser, refreshAccessToken, token, validator)
+	authHandler := http.NewAuthHandler(authenticateUser, refreshAccessToken, validator)
 	dashboardGormStore := dashboard.NewStore(gormDB, logger)
 	dashboardService := dashboard.NewService(dashboardGormStore, logger)
 	dashboardHandler := http.NewDashboardHandler(dashboardService, logger)

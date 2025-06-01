@@ -13,7 +13,7 @@ import (
 	"github.com/gelozr/go-dash/internal/dashboard"
 	"github.com/gelozr/go-dash/internal/db"
 	"github.com/gelozr/go-dash/internal/event"
-	"github.com/gelozr/go-dash/internal/event/bus"
+	"github.com/gelozr/go-dash/internal/event/registry"
 	"github.com/gelozr/go-dash/internal/hashing"
 	"github.com/gelozr/go-dash/internal/http"
 	"github.com/gelozr/go-dash/internal/http/validation"
@@ -42,7 +42,7 @@ var AppProviders = wire.NewSet(
 	// EVENT
 	event.NewBroker,
 	wire.Bind(new(event.Publisher), new(*event.Broker)),
-	bus.RegisterAll,
+	registry.RegisterAll,
 
 	// VALIDATOR
 	gp.New,

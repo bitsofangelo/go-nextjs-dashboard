@@ -35,7 +35,6 @@ func (s *Service) List(ctx context.Context) ([]Customer, error) {
 }
 
 func (s *Service) GetByID(ctx context.Context, id uuid.UUID) (*Customer, error) {
-	// return nil, errors.New("not implemented")
 	c, err := s.store.Find(ctx, id)
 
 	if err != nil {

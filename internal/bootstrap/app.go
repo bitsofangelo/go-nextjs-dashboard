@@ -11,7 +11,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/gelozr/go-dash/internal/config"
-	"github.com/gelozr/go-dash/internal/event/bus"
+	"github.com/gelozr/go-dash/internal/event/registry"
 	"github.com/gelozr/go-dash/internal/http"
 	"github.com/gelozr/go-dash/internal/logger"
 )
@@ -34,7 +34,7 @@ func NewApp(
 	logger logger.Logger,
 	server Server,
 	_ timezoneInitializer,
-	_ bus.RegisterInitializer,
+	_ registry.RegisterInitializer,
 	_ http.RouteInitializer,
 ) *App {
 	return &App{
