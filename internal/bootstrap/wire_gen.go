@@ -59,15 +59,16 @@ func InitApp() (*App, error) {
 	hash := hashing.New(argon2IDHasher)
 	dbProvider := AuthDBProvider(userService, hash)
 	authenticateUser := app.NewAuthenticateUser(dbProvider, token)
-	authHandler := http.NewAuthHandler(authenticateUser)
-	dashboardGormStore := dashboard.NewStore(gormDB, logger)
-	dashboardService := dashboard.NewService(dashboardGormStore, logger)
-	dashboardHandler := http.NewDashboardHandler(dashboardService, logger)
-	userHandler := http.NewUserHandler(userService, logger)
+	refreshAccessToken := app.NewRefreshAccessToken(token)
 	validator, err := gp.New()
 	if err != nil {
 		return nil, err
 	}
+	authHandler := http.NewAuthHandler(dbProvider, authenticateUser, refreshAccessToken, token, validator)
+	dashboardGormStore := dashboard.NewStore(gormDB, logger)
+	dashboardService := dashboard.NewService(dashboardGormStore, logger)
+	dashboardHandler := http.NewDashboardHandler(dashboardService, logger)
+	userHandler := http.NewUserHandler(userService, logger)
 	customerHandler := http.NewCustomerHandler(service, validator, logger)
 	invoiceGormStore := invoice.NewStore(gormDB, logger)
 	invoiceService := invoice.NewService(invoiceGormStore, logger)

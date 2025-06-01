@@ -86,6 +86,7 @@ var AppProviders = wire.NewSet(
 
 	// USE CASES
 	app.NewAuthenticateUser,
+	app.NewRefreshAccessToken,
 	app.NewCreateInvoice,
 )
 

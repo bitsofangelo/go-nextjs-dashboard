@@ -10,10 +10,19 @@ import (
 )
 
 var (
-	ErrPasswordIncorrect = errors.New("password incorrect")
-	ErrJWTExpired        = errors.New("JWT is expired")
-	ErrJWTInvalid        = errors.New("JWT is invalid")
+	ErrPasswordIncorrect        = errors.New("password incorrect")
+	ErrJWTExpired               = errors.New("JWT is expired")
+	ErrJWTInvalid               = errors.New("JWT is invalid")
+	ErrRefreshTokenExpired      = errors.New("refresh token is expired")
+	ErrRefreshTokenUserMismatch = errors.New("token user does not match")
+	ErrRefreshTokenUsed         = errors.New("refresh token is used")
 )
+
+type AccessToken struct {
+	AccessToken  string
+	RefreshToken string
+	ExpiresIn    int
+}
 
 type PasswordCredentials struct {
 	Email    string
@@ -71,7 +80,15 @@ func (a *Token) ParseJWT(token string) (AccessClaims, error) {
 	return claims, nil
 }
 
-func (a *Token) CreateRefresh(ctx context.Context, uid uuid.UUID) (string, error) {
+func (a *Token) GetRefresh(ctx context.Context, id uuid.UUID) (RefreshSession, error) {
+	r, err := a.refreshStore.Get(ctx, id)
+	if err != nil {
+		return RefreshSession{}, fmt.Errorf("get refresh: %w", err)
+	}
+	return r, nil
+}
+
+func (a *Token) CreateRefresh(ctx context.Context, uid uuid.UUID) (RefreshSession, error) {
 	r, err := a.refreshStore.Insert(ctx, RefreshSession{
 		ID:        uuid.New(),
 		UserID:    uid,
@@ -81,32 +98,30 @@ func (a *Token) CreateRefresh(ctx context.Context, uid uuid.UUID) (string, error
 	})
 
 	if err != nil {
-		return "", fmt.Errorf("create refresh session: %w", err)
+		return RefreshSession{}, fmt.Errorf("create refresh session: %w", err)
 	}
 
-	return r.ID.String(), nil
+	return r, nil
 }
 
-func (a *Token) ExchangeRefresh(ctx context.Context, token string) (string, error) {
-	id, err := uuid.Parse(token)
+func (a *Token) ExchangeRefresh(ctx context.Context, currRefresh RefreshSession) (RefreshSession, error) {
+	if currRefresh.ExpiresAt.Before(time.Now()) {
+		return RefreshSession{}, ErrRefreshTokenExpired
+	}
+
+	if currRefresh.Used {
+		return RefreshSession{}, ErrRefreshTokenUsed
+	}
+
+	currRefresh.Used = true
+	if err := a.refreshStore.Update(ctx, currRefresh); err != nil {
+		return RefreshSession{}, fmt.Errorf("update refresh session: %w", err)
+	}
+
+	newRefresh, err := a.CreateRefresh(ctx, currRefresh.UserID)
 	if err != nil {
-		return "", fmt.Errorf("token uuid parse: %w", err)
+		return RefreshSession{}, fmt.Errorf("create refresh token: %w", err)
 	}
 
-	sess, err := a.refreshStore.Get(ctx, id)
-	if err != nil {
-		return "", fmt.Errorf("get refresh session: %w", err)
-	}
-
-	sess.Used = true
-	if err = a.refreshStore.Update(ctx, sess); err != nil {
-		return "", fmt.Errorf("update refresh session: %w", err)
-	}
-
-	newToken, err := a.CreateRefresh(ctx, sess.UserID)
-	if err != nil {
-		return "", fmt.Errorf("create refresh token: %w", err)
-	}
-
-	return newToken, nil
+	return newRefresh, nil
 }

@@ -29,6 +29,7 @@ var (
 	reqIDCtxKey     = ctxKey("req_id")
 	reqLocaleCtxKey = ctxKey("req_locale")
 	loggerCtxKey    = ctxKey("logger_key")
+	userIDCtxKey    = ctxKey("user_id")
 )
 
 func AuthMiddleware(token *auth.Token) fiber.Handler {
@@ -50,7 +51,8 @@ func AuthMiddleware(token *auth.Token) fiber.Handler {
 			}
 		}
 
-		c.Locals("user", claims.UserID)
+		ctx := context.WithValue(c.Context(), userIDCtxKey, claims.UserID)
+		c.SetContext(ctx)
 
 		return c.Next()
 	}

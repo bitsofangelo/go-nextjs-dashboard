@@ -17,9 +17,10 @@ func SetupFiberRoutes(
 	r := s.app.Group("/api")
 
 	// auth routes
-	ag := r.Group("/auth", loggerKeyMiddleware("http.auth"), rateLimiter(10))
+	ag := r.Group("/auth", loggerKeyMiddleware("http.auth"), rateLimiter(5))
 	{
 		ag.Post("/login", authH.Login)
+		ag.Post("/refresh", authH.Refresh)
 	}
 
 	// dashboard routes

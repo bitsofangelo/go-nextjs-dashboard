@@ -3,6 +3,8 @@ package http
 import (
 	"context"
 	"strconv"
+
+	"github.com/google/uuid"
 )
 
 type Response struct {
@@ -24,6 +26,11 @@ func Locale(ctx context.Context, def ...string) string {
 	}
 
 	return "en"
+}
+
+func UserIDFromCtx(ctx context.Context) (uuid.UUID, bool) {
+	v, ok := ctx.Value(userIDCtxKey).(uuid.UUID)
+	return v, ok
 }
 
 func getDefaultNum[T any](value string, def T) T {

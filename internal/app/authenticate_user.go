@@ -9,12 +9,6 @@ import (
 	"github.com/gelozr/go-dash/internal/user"
 )
 
-type AccessToken struct {
-	AccessToken  string
-	RefreshToken string
-	ExpiresIn    int
-}
-
 type AuthenticateUser struct {
 	auth  auth.Authenticator[user.User]
 	token *auth.Token
@@ -27,8 +21,8 @@ func NewAuthenticateUser(auth auth.Authenticator[user.User], token *auth.Token) 
 	}
 }
 
-func (u *AuthenticateUser) Execute(ctx context.Context, creds auth.PasswordCredentials) (AccessToken, error) {
-	var accessToken AccessToken
+func (u *AuthenticateUser) Execute(ctx context.Context, creds auth.PasswordCredentials) (auth.AccessToken, error) {
+	var accessToken auth.AccessToken
 
 	usr, err := u.auth.Authenticate(ctx, creds)
 	if err != nil {
@@ -45,9 +39,9 @@ func (u *AuthenticateUser) Execute(ctx context.Context, creds auth.PasswordCrede
 		return accessToken, fmt.Errorf("create refresh token: %w", err)
 	}
 
-	accessToken = AccessToken{
+	accessToken = auth.AccessToken{
 		AccessToken:  jwt,
-		RefreshToken: refresh,
+		RefreshToken: refresh.ID.String(),
 		ExpiresIn:    int(time.Until(exp).Seconds()),
 	}
 
