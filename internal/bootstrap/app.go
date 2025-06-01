@@ -3,12 +3,11 @@ package bootstrap
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
-
-	"gorm.io/gorm"
 
 	"github.com/gelozr/go-dash/internal/config"
 	"github.com/gelozr/go-dash/internal/event/registry"
@@ -22,15 +21,15 @@ type Server interface {
 }
 
 type App struct {
-	cfg    *config.Config
-	db     *gorm.DB
-	logger logger.Logger
-	server Server
+	cfg      *config.Config
+	dbCloser io.Closer
+	logger   logger.Logger
+	server   Server
 }
 
 func NewApp(
 	cfg *config.Config,
-	db *gorm.DB,
+	dbCloser io.Closer,
 	logger logger.Logger,
 	server Server,
 	_ timezoneInitializer,
@@ -38,10 +37,10 @@ func NewApp(
 	_ http.RouteInitializer,
 ) *App {
 	return &App{
-		cfg:    cfg,
-		logger: logger,
-		db:     db,
-		server: server,
+		cfg:      cfg,
+		logger:   logger,
+		dbCloser: dbCloser,
+		server:   server,
 	}
 }
 
@@ -86,10 +85,8 @@ func (a *App) Close() error {
 		return fmt.Errorf("failed to close logger: %w", err)
 	}
 
-	if db, err := a.db.DB(); err == nil {
-		if err = db.Close(); err != nil {
-			return fmt.Errorf("failed to close database: %w", err)
-		}
+	if err := a.dbCloser.Close(); err != nil {
+		return fmt.Errorf("failed to close database: %w", err)
 	}
 
 	return nil

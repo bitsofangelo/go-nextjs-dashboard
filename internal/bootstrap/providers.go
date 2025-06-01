@@ -2,9 +2,11 @@ package bootstrap
 
 import (
 	"fmt"
+	"io"
 	"time"
 
 	"github.com/google/wire"
+	"gorm.io/gorm"
 
 	"github.com/gelozr/go-dash/internal/app"
 	"github.com/gelozr/go-dash/internal/auth"
@@ -34,6 +36,7 @@ var AppProviders = wire.NewSet(
 	db.Open,
 	db.NewTxManager,
 	wire.Bind(new(db.TxManager), new(*db.GormTxManager)),
+	DBCloserProvider,
 
 	// LOGGER
 	slog.New,
@@ -120,4 +123,12 @@ func setTimezone(cfg *config.Config) (timezoneInitializer, error) {
 
 func AuthDBProvider(userSvc *user.Service, hash *hashing.Hash) *auth.DBProvider[user.User] {
 	return auth.NewDBProvider[user.User](userSvc, hash)
+}
+
+func DBCloserProvider(db *gorm.DB) (io.Closer, error) {
+	rawDB, err := db.DB()
+	if err != nil {
+		return nil, fmt.Errorf("failed to sql db: %w", err)
+	}
+	return rawDB, nil
 }
