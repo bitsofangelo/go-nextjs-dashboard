@@ -39,6 +39,10 @@ func InitApp() (*App, error) {
 	if err != nil {
 		return nil, err
 	}
+	closer, err := DBCloserProvider(gormDB)
+	if err != nil {
+		return nil, err
+	}
 	fiberServer := http.NewFiberServer(configConfig, logger)
 	bootstrapTimezoneInitializer, err := setTimezone(configConfig)
 	if err != nil {
@@ -76,6 +80,6 @@ func InitApp() (*App, error) {
 	createInvoice := app.NewCreateInvoice(service, invoiceService, gormTxManager, logger)
 	invoiceHandler := http.NewInvoiceHandler(invoiceService, createInvoice, validator, logger)
 	routeInitializer := http.SetupFiberRoutes(fiberServer, token, authHandler, dashboardHandler, userHandler, customerHandler, invoiceHandler)
-	bootstrapApp := NewApp(configConfig, gormDB, logger, fiberServer, bootstrapTimezoneInitializer, registerInitializer, routeInitializer)
+	bootstrapApp := NewApp(configConfig, closer, logger, fiberServer, bootstrapTimezoneInitializer, registerInitializer, routeInitializer)
 	return bootstrapApp, nil
 }
