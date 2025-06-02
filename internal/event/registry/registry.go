@@ -69,7 +69,7 @@ func SendWelcomeEmail(custSvc *customer.Service, mailer mail.Sender) event.Handl
 			}},
 			Subject: "Welcome subject",
 			HTML:    "<p>Welcome message</p>",
-			Text:    "Welcome message",
+			// Text:    "Welcome message",
 			Headers: nil,
 		}
 

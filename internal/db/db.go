@@ -17,6 +17,10 @@ import (
 	"github.com/gelozr/go-dash/internal/logger"
 )
 
+type ctxKey string
+
+var dbTxKey = ctxKey("db_tx_key")
+
 func Open(cfg *config.Config, log logger.Logger) (*gorm.DB, error) {
 	wd, _ := os.Getwd()
 
@@ -58,10 +62,6 @@ func Open(cfg *config.Config, log logger.Logger) (*gorm.DB, error) {
 type TxManager interface {
 	Do(context.Context, func(context.Context) error) error
 }
-
-type ctxKey string
-
-var dbTxKey = ctxKey("db_tx_key")
 
 type GormTxManager struct {
 	db *gorm.DB

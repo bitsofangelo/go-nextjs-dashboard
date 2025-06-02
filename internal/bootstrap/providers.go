@@ -52,9 +52,7 @@ var AppProviders = wire.NewSet(
 	wire.Bind(new(validation.Validator), new(*gp.Validator)),
 
 	// HASHING
-	hashing.NewArgon2IDHasher,
-	wire.Bind(new(hashing.Hasher), new(*hashing.Argon2IDHasher)),
-	hashing.New,
+	hashing.NewManager,
 
 	// MAIL
 	mail.NewSMTPMailer,
@@ -121,7 +119,7 @@ func setTimezone(cfg *config.Config) (timezoneInitializer, error) {
 	return timezoneInitializer{}, nil
 }
 
-func AuthDBProvider(userSvc *user.Service, hash *hashing.Hash) *auth.DBProvider[user.User] {
+func AuthDBProvider(userSvc *user.Service, hash *hashing.Manager) *auth.DBProvider[user.User] {
 	return auth.NewDBProvider[user.User](userSvc, hash)
 }
 

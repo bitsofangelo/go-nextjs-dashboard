@@ -23,23 +23,23 @@ func NewBus[T any]() *Bus[T] {
 	}
 }
 
-func (b *Bus[T]) Subscribe(fn Handler[T]) {
+func (b *Bus[T]) Subscribe(h Handler[T]) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	b.handlers = append(b.handlers, fn)
+	b.handlers = append(b.handlers, h)
 }
 
-func (b *Bus[T]) SubscribeAsync(fn Handler[T]) {
-	newFn := b.asyncHandler(fn)
-	b.Subscribe(newFn)
+func (b *Bus[T]) SubscribeAsync(h Handler[T]) {
+	ah := b.asyncHandler(h)
+	b.Subscribe(ah)
 }
 
-func (b *Bus[T]) SetAsyncHandler(fn func(Handler[T]) Handler[T]) error {
-	if fn == nil {
+func (b *Bus[T]) SetAsyncHandler(ah func(Handler[T]) Handler[T]) error {
+	if ah == nil {
 		return errors.New("nil async handler")
 	}
 
-	b.asyncHandler = fn
+	b.asyncHandler = ah
 
 	return nil
 }
@@ -75,14 +75,14 @@ func (b *Bus[T]) Key() string {
 }
 
 func asyncHandler[T any](h Handler[T]) Handler[T] {
-	return func(ctx context.Context, e T) error {
+	return func(ctx context.Context, evt T) error {
 		go func() {
 			defer func() {
 				if r := recover(); r != nil {
 					fmt.Println(r)
 				}
 			}()
-			if err := h(ctx, e); err != nil {
+			if err := h(ctx, evt); err != nil {
 				fmt.Println(err)
 			}
 		}()

@@ -26,6 +26,8 @@ type Config struct {
 	DBPass string `mapstructure:"DB_PASS"`
 	DBName string `mapstructure:"DB_NAME"`
 
+	HashingDriver string `mapstructure:"HASHING_DRIVER"`
+
 	LogLevel  string `mapstructure:"LOG_LEVEL"`  // "debug" | "info" | "warn" | "error"
 	LogFormat string `mapstructure:"LOG_FORMAT"` // "text" | "json"
 	LogPath   string `mapstructure:"LOG_PATH"`   // "./logs/app.log" | "/var/log/<app_name>/app.log"

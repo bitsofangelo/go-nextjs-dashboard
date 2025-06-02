@@ -7,6 +7,9 @@ import (
 	"net/mail"
 	"net/smtp"
 	"strings"
+	"time"
+
+	"github.com/google/uuid"
 
 	"github.com/gelozr/go-dash/internal/config"
 )
@@ -29,13 +32,20 @@ func NewSMTPMailer(cfg *config.Config) *SMTPMailer {
 	}
 }
 
-func (s *SMTPMailer) Send(ctx context.Context, m *Message) error {
-	// Build RFC-822 body
-	var sb strings.Builder
+func (s *SMTPMailer) buildMessageID(sb *strings.Builder) {
+	sb.WriteString(fmt.Sprintf("Message-ID: <%d.%s@testdomain.dev>\r\n", time.Now().UnixNano(), "testdomain.dev"))
+}
 
+func (s *SMTPMailer) buildDate(sb *strings.Builder) {
+	sb.WriteString(fmt.Sprintf("Date: %s\r\n", time.Now().Format(time.RFC1123Z)))
+}
+
+func (s *SMTPMailer) buildFrom(sb *strings.Builder, m *Message) {
 	from := mail.Address{Name: m.From.Name, Address: m.From.Address}
 	sb.WriteString(fmt.Sprintf("From: %s\r\n", from.String()))
+}
 
+func (s *SMTPMailer) buildTo(sb *strings.Builder, m *Message) {
 	if len(m.To) > 0 {
 		toList := make([]string, len(m.To))
 		for i, a := range m.To {
@@ -44,11 +54,51 @@ func (s *SMTPMailer) Send(ctx context.Context, m *Message) error {
 		}
 		sb.WriteString(fmt.Sprintf("To: %s\r\n", strings.Join(toList, ", ")))
 	}
+}
 
+func (s *SMTPMailer) buildSubject(sb *strings.Builder, m *Message) {
 	sb.WriteString("Subject: " + m.Subject + "\r\n")
+}
+
+func (s *SMTPMailer) buildBody(sb *strings.Builder, m *Message, boundary string) {
+	// Plain text part
+	if m.Text != "" {
+		sb.WriteString(fmt.Sprintf("--%s\r\n", boundary))
+		sb.WriteString("Content-Type: text/plain; charset=\"UTF-8\"\r\n")
+		sb.WriteString("Content-Transfer-Encoding: quoted-printable\r\n")
+		sb.WriteString("Content-Disposition: inline\r\n\r\n")
+		sb.WriteString(m.Text + "\r\n\r\n")
+	}
+
+	// HTML part
+	if m.HTML != "" {
+		sb.WriteString(fmt.Sprintf("--%s\r\n", boundary))
+		sb.WriteString("Content-Type: text/html; charset=\"UTF-8\"\r\n")
+		sb.WriteString("Content-Transfer-Encoding: quoted-printable\r\n")
+		sb.WriteString("Content-Disposition: inline\r\n\r\n")
+		sb.WriteString(m.HTML + "\r\n\r\n")
+	}
+}
+
+func (s *SMTPMailer) Send(ctx context.Context, m *Message) error {
+	boundary := uuid.New().String()
+
+	var sb strings.Builder
 	sb.WriteString("MIME-Version: 1.0\r\n")
-	sb.WriteString(`Content-Type: text/html; charset="UTF-8"` + "\r\n\r\n")
-	sb.WriteString(m.HTML)
+
+	s.buildDate(&sb)
+	s.buildMessageID(&sb)
+	s.buildSubject(&sb, m)
+	s.buildFrom(&sb, m)
+	s.buildTo(&sb, m)
+
+	sb.WriteString(fmt.Sprintf("Content-Type: multipart/alternative; boundary=%s\r\n", boundary))
+	sb.WriteString("\r\n") // end of headers
+
+	s.buildBody(&sb, m, boundary)
+
+	// closing boundary
+	sb.WriteString(fmt.Sprintf("--%s--\r\n", boundary))
 
 	addr := fmt.Sprintf("%s:%d", s.Host, s.Port)
 	auth := smtp.PlainAuth("", s.Username, s.Password, s.Host)

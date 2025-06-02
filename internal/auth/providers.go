@@ -11,12 +11,12 @@ import (
 
 type DBProvider[U any] struct {
 	userSvc *user.Service
-	hash    *hashing.Hash
+	hash    *hashing.Manager
 }
 
 var _ Authenticator[any] = (*DBProvider[any])(nil)
 
-func NewDBProvider[U any](userSvc *user.Service, hash *hashing.Hash) *DBProvider[U] {
+func NewDBProvider[U any](userSvc *user.Service, hash *hashing.Manager) *DBProvider[U] {
 	return &DBProvider[U]{
 		userSvc: userSvc,
 		hash:    hash,
