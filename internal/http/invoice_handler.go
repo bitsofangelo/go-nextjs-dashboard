@@ -3,6 +3,7 @@ package http
 import (
 	"errors"
 	"fmt"
+	"net/http"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
@@ -117,7 +118,7 @@ func (h *InvoiceHandler) Create(c fiber.Ctx) error {
 		}
 	}
 
-	return c.JSON(
+	return c.Status(http.StatusCreated).JSON(
 		response.New(response.ToInvoice(*inv)),
 	)
 }

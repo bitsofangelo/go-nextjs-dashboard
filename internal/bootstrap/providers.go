@@ -56,6 +56,7 @@ var AppProviders = wire.NewSet(
 
 	// MAIL
 	mail.NewManager,
+	wire.Bind(new(mail.Mailer), new(mail.Manager)),
 
 	// AUTH
 	AuthDBProvider,
