@@ -35,6 +35,7 @@ type Config struct {
 
 	JWTHmacKey string `mapstructure:"JWT_HMAC_KEY"`
 
+	MailDriver        string `mapstructure:"MAIL_DRIVER"`
 	MailHost          string `mapstructure:"MAIL_HOST"`
 	MailPort          int    `mapstructure:"MAIL_PORT"`
 	MailUser          string `mapstructure:"MAIL_USER"`

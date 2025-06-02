@@ -15,7 +15,7 @@ type RegisterInitializer struct{}
 func RegisterAll(
 	broker *event.Broker,
 	custSvc *customer.Service,
-	mailer mail.Sender,
+	mailer mail.Mailer,
 	logger logger.Logger,
 ) RegisterInitializer {
 	log := logger.With("component", "event/registry")
@@ -51,7 +51,7 @@ func asyncHandler[T any](log logger.Logger) func(event.Handler[T]) event.Handler
 	}
 }
 
-func SendWelcomeEmail(custSvc *customer.Service, mailer mail.Sender) event.Handler[customer.Created] {
+func SendWelcomeEmail(custSvc *customer.Service, mailer mail.Mailer) event.Handler[customer.Created] {
 	return func(ctx context.Context, e customer.Created) error {
 		cust, err := custSvc.GetByID(ctx, e.ID)
 		if err != nil {

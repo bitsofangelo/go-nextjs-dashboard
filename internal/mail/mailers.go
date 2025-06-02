@@ -15,8 +15,8 @@ import (
 )
 
 type SMTPMailer struct {
-	Host          string // "smtp.example.com"
-	Port          int    // 587
+	Host          string
+	Port          int
 	Username      string
 	Password      string
 	SkipTLSVerify bool

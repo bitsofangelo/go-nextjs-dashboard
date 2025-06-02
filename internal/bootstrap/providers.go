@@ -55,9 +55,7 @@ var AppProviders = wire.NewSet(
 	hashing.NewManager,
 
 	// MAIL
-	mail.NewSMTPMailer,
 	mail.NewManager,
-	wire.Bind(new(mail.Sender), new(*mail.Manager)),
 
 	// AUTH
 	AuthDBProvider,
@@ -119,7 +117,7 @@ func setTimezone(cfg *config.Config) (timezoneInitializer, error) {
 	return timezoneInitializer{}, nil
 }
 
-func AuthDBProvider(userSvc *user.Service, hash *hashing.Manager) *auth.DBProvider[user.User] {
+func AuthDBProvider(userSvc *user.Service, hash hashing.Manager) *auth.DBProvider[user.User] {
 	return auth.NewDBProvider[user.User](userSvc, hash)
 }
 

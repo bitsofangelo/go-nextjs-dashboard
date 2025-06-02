@@ -3,14 +3,26 @@ package mail
 import (
 	"context"
 	"errors"
+
+	"github.com/gelozr/go-dash/internal/config"
 )
 
-type Mailer string
+type Driver string
 
 const (
-	PlainSTMPMailer Mailer = "plain_smtp"
-	CustomMailer    Mailer = "custom"
+	SMTP   = Driver("smtp")
+	Custom = Driver("custom")
 )
+
+type Mailer interface {
+	Send(context.Context, *Message) error
+}
+
+type Manager interface {
+	Mailer
+	RegisterDriver(Driver, Mailer) error
+	Mailer(Driver) (Mailer, error)
+}
 
 type Address struct {
 	Name    string
@@ -26,43 +38,30 @@ type Message struct {
 	Headers map[string]string
 }
 
-type Sender interface {
-	Send(context.Context, *Message) error
+type manager struct {
+	mailers       map[Driver]Mailer
+	defaultDriver Driver
 }
 
-type MailerDriver = Sender
+func NewManager(cfg *config.Config) Manager {
+	mailers := make(map[Driver]Mailer)
+	mailers[SMTP] = NewSMTPMailer(cfg)
 
-type Factory interface {
-	Sender
-	Mailer(Mailer) (Sender, error)
-}
-
-type Manager struct {
-	mailers       map[Mailer]MailerDriver
-	defaultMailer Mailer
-	smtp          *SMTPMailer
-}
-
-func NewManager(smtp *SMTPMailer) *Manager {
-	mailers := make(map[Mailer]MailerDriver)
-	mailers[PlainSTMPMailer] = smtp
-
-	return &Manager{
+	return &manager{
 		mailers:       mailers,
-		defaultMailer: PlainSTMPMailer,
-		smtp:          smtp,
+		defaultDriver: getDefaultDriver(cfg),
 	}
 }
 
-func (m *Manager) Mailer(mailer Mailer) (Sender, error) {
-	if ml, ok := m.mailers[mailer]; ok {
+func (m *manager) Mailer(driver Driver) (Mailer, error) {
+	if ml, ok := m.mailers[driver]; ok {
 		return ml, nil
 	}
 	return nil, errors.New("mailer not found")
 }
 
-func (m *Manager) Send(ctx context.Context, msg *Message) error {
-	mailer, err := m.Mailer(m.defaultMailer)
+func (m *manager) Send(ctx context.Context, msg *Message) error {
+	mailer, err := m.Mailer(m.defaultDriver)
 	if err != nil {
 		return err
 	}
@@ -70,21 +69,29 @@ func (m *Manager) Send(ctx context.Context, msg *Message) error {
 	return mailer.Send(ctx, msg)
 }
 
-func (m *Manager) RegisterMailer(mailer Mailer, driver MailerDriver) error {
-	_, ok := m.mailers[mailer]
+func (m *manager) RegisterDriver(driver Driver, mailer Mailer) error {
+	_, ok := m.mailers[driver]
 	if ok {
-		return errors.New("mailer already exists")
+		return errors.New("driver already exists")
 	}
 
-	m.mailers[mailer] = driver
+	m.mailers[driver] = mailer
 	return nil
 }
 
-func (m *Manager) SetDefaultMailer(mailer Mailer) error {
-	if _, ok := m.mailers[mailer]; !ok {
-		return errors.New("mailer not found")
+func (m *manager) SetDefaultDriver(driver Driver) error {
+	if _, ok := m.mailers[driver]; !ok {
+		return errors.New("driver not found")
 	}
 
-	m.defaultMailer = mailer
+	m.defaultDriver = driver
 	return nil
+}
+
+func getDefaultDriver(cfg *config.Config) Driver {
+	defaultDriver := SMTP
+	if cfg.MailDriver != "" {
+		defaultDriver = Driver(cfg.MailDriver)
+	}
+	return defaultDriver
 }

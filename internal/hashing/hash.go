@@ -1,9 +1,18 @@
 package hashing
 
 import (
+	"errors"
 	"fmt"
+	"sync"
 
 	"github.com/gelozr/go-dash/internal/config"
+)
+
+type Driver string
+
+const (
+	Bcrypt   = Driver("bcrypt")
+	Argon2ID = Driver("argon2id")
 )
 
 type Hasher interface {
@@ -11,51 +20,83 @@ type Hasher interface {
 	Check(password, hash string) (bool, error)
 }
 
-type Manager struct {
-	bcrypt        BcryptHasher
-	argon2id      Argon2IDHasher
-	defaultHasher string
+type Manager interface {
+	Hasher
+	RegisterHasher(d Driver, hasher Hasher) error
 }
 
-func NewManager(cfg *config.Config) *Manager {
-	return &Manager{
-		bcrypt:        NewBcryptHasher(),
-		argon2id:      NewArgon2IDHasher(),
-		defaultHasher: getDefaultDriver(cfg),
+type manager struct {
+	mu            sync.RWMutex
+	hashers       map[Driver]Hasher
+	defaultDriver Driver
+}
+
+func NewManager(cfg *config.Config) Manager {
+	hashers := make(map[Driver]Hasher)
+	hashers[Bcrypt] = NewBcryptHasher()
+	hashers[Argon2ID] = NewArgon2IDHasher()
+
+	return &manager{
+		hashers:       hashers,
+		defaultDriver: getDefaultDriver(cfg),
 	}
 }
 
-func (m *Manager) getHasher(hasher string) Hasher {
-	switch hasher {
-	case "argon2id":
-		return m.argon2id
-	default:
-		return m.bcrypt
+func (m *manager) getHasher(driver Driver) (Hasher, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	if hasher, ok := m.hashers[driver]; ok {
+		return hasher, nil
 	}
+	return nil, fmt.Errorf("hasher not found for driver %s", driver)
 }
 
-// Hash hashes a plaintext using bcrypt
-func (m *Manager) Hash(text string) (string, error) {
-	s, err := m.getHasher(m.defaultHasher).Hash(text)
+func (m *manager) RegisterHasher(d Driver, hasher Hasher) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	_, ok := m.hashers[d]
+	if ok {
+		return errors.New("hash driver already registered")
+	}
+
+	m.hashers[d] = hasher
+	return nil
+}
+
+// Hash hashes a plaintext
+func (m *manager) Hash(password string) (string, error) {
+	hasher, err := m.getHasher(m.defaultDriver)
+	if err != nil {
+		return "", fmt.Errorf("get hasher: %w", err)
+	}
+
+	s, err := hasher.Hash(password)
 	if err != nil {
 		return "", fmt.Errorf("hash: %w", err)
 	}
 	return s, nil
 }
 
-// Check checks if the given text matches the hashed text
-func (m *Manager) Check(text, hash string) (bool, error) {
-	match, err := m.getHasher(m.defaultHasher).Check(text, hash)
+// Check checks if the given password matches the hashed password
+func (m *manager) Check(password, hash string) (bool, error) {
+	hasher, err := m.getHasher(m.defaultDriver)
+	if err != nil {
+		return false, fmt.Errorf("get hasher: %w", err)
+	}
+
+	match, err := hasher.Check(password, hash)
 	if err != nil {
 		return false, fmt.Errorf("check hash: %w", err)
 	}
 	return match, nil
 }
 
-func getDefaultDriver(cfg *config.Config) string {
-	defaultHasher := "bcrypt"
+func getDefaultDriver(cfg *config.Config) Driver {
+	defaultHasher := Bcrypt
 	if cfg.HashingDriver != "" {
-		defaultHasher = cfg.HashingDriver
+		defaultHasher = Driver(cfg.HashingDriver)
 	}
 	return defaultHasher
 }
