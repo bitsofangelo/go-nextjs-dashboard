@@ -72,11 +72,7 @@ func (m *manager) Hash(password string) (string, error) {
 		return "", fmt.Errorf("get hasher: %w", err)
 	}
 
-	s, err := hasher.Hash(password)
-	if err != nil {
-		return "", fmt.Errorf("hash: %w", err)
-	}
-	return s, nil
+	return hasher.Hash(password)
 }
 
 // Check checks if the given password matches the hashed password
@@ -86,11 +82,7 @@ func (m *manager) Check(password, hash string) (bool, error) {
 		return false, fmt.Errorf("get hasher: %w", err)
 	}
 
-	match, err := hasher.Check(password, hash)
-	if err != nil {
-		return false, fmt.Errorf("check hash: %w", err)
-	}
-	return match, nil
+	return hasher.Check(password, hash)
 }
 
 func getDefaultDriver(cfg *config.Config) Driver {
