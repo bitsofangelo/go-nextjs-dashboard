@@ -9,21 +9,31 @@ import (
 	"github.com/gelozr/go-dash/internal/user"
 )
 
-type DBProvider[U any] struct {
+type PasswordCredentials struct {
+	Email    string
+	Password string
+}
+
+type DBUserProvider struct {
 	userSvc *user.Service
 	hash    hashing.Hasher
 }
 
-var _ Authenticator[any] = (*DBProvider[any])(nil)
+var _ UserProvider = (*DBUserProvider)(nil)
 
-func NewDBProvider[U any](userSvc *user.Service, hash hashing.Hasher) *DBProvider[U] {
-	return &DBProvider[U]{
+func NewDBUserProvider(userSvc *user.Service, hash hashing.Manager) *DBUserProvider {
+	return &DBUserProvider{
 		userSvc: userSvc,
 		hash:    hash,
 	}
 }
 
-func (p DBProvider[U]) Authenticate(ctx context.Context, creds PasswordCredentials) (*U, error) {
+func (p DBUserProvider) FindByCredentials(ctx context.Context, credentials Credentials) (User, error) {
+	creds, ok := credentials.(PasswordCredentials)
+	if !ok {
+		return nil, errors.New("invalid credentials type")
+	}
+
 	u, err := p.userSvc.GetByEmail(ctx, creds.Email)
 	if err != nil {
 		switch {
@@ -42,5 +52,5 @@ func (p DBProvider[U]) Authenticate(ctx context.Context, creds PasswordCredentia
 		return nil, ErrPasswordIncorrect
 	}
 
-	return any(u).(*U), nil
+	return u, nil
 }

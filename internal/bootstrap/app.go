@@ -11,8 +11,6 @@ import (
 	"time"
 
 	"github.com/gelozr/go-dash/internal/config"
-	"github.com/gelozr/go-dash/internal/event/registry"
-	"github.com/gelozr/go-dash/internal/http"
 	"github.com/gelozr/go-dash/internal/logger"
 )
 
@@ -33,9 +31,6 @@ func NewApp(
 	dbCloser io.Closer,
 	logger logger.Logger,
 	server Server,
-	_ timezoneInitializer,
-	_ registry.RegisterInitializer,
-	_ http.RouteInitializer,
 ) *App {
 	return &App{
 		cfg:      cfg,
@@ -89,7 +84,7 @@ func (a *App) Close() error {
 	}
 
 	if err := a.dbCloser.Close(); err != nil {
-		errs = append(errs, fmt.Errorf("failed to close database: %w", err))
+		errs = append(errs, fmt.Errorf("failed to close db connection: %w", err))
 	}
 
 	return errors.Join(errs...)

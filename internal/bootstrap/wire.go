@@ -9,9 +9,9 @@ import (
 
 func InitApp() (*App, error) {
 	wire.Build(
-		AppProviders,
+		AppServiceProviders,
 		HTTPProviders,
-		NewApp,
+		AppProvider,
 	)
 	return nil, nil
 }

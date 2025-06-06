@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/spf13/viper"
 )
@@ -70,6 +71,13 @@ func Load() (*Config, error) {
 	default:
 		cfg.AppEnv = Local
 	}
+
+	// set app timezone
+	loc, err := time.LoadLocation(cfg.AppTimezone)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load timezone: %w", err)
+	}
+	time.Local = loc
 
 	return &cfg, nil
 }

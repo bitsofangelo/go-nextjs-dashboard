@@ -39,34 +39,28 @@ func InitApp() (*App, error) {
 	if err != nil {
 		return nil, err
 	}
-	closer, err := DBCloserProvider(gormDB)
-	if err != nil {
-		return nil, err
-	}
 	fiberServer := http.NewFiberServer(configConfig, logger)
-	bootstrapTimezoneInitializer, err := setTimezone(configConfig)
-	if err != nil {
-		return nil, err
-	}
 	broker := event.NewBroker()
 	gormStore := customer.NewStore(gormDB, logger)
 	service := customer.NewService(gormStore, broker, logger)
 	manager := mail.NewManager(configConfig)
 	registerInitializer := registry.RegisterAll(broker, service, manager, logger)
-	gojwt := auth.NewGOJWT(configConfig)
-	gormRefreshStore := auth.NewGormRefreshStore(gormDB, logger)
-	token := auth.NewToken(gojwt, gormRefreshStore)
 	userGormStore := user.NewStore(gormDB, logger)
 	userService := user.NewService(userGormStore, logger)
 	hashingManager := hashing.NewManager(configConfig)
-	dbProvider := AuthDBProvider(userService, hashingManager)
-	authenticateUser := app.NewAuthenticateUser(dbProvider, token)
-	refreshAccessToken := app.NewRefreshAccessToken(token)
+	dbUserProvider := auth.NewDBUserProvider(userService, hashingManager)
+	gormRefreshStore := auth.NewGormRefreshStore(gormDB, logger)
+	token := auth.NewToken(gormRefreshStore)
+	jwtDriver := auth.NewJWTDriver(configConfig, token)
+	provider, err := AuthProvider(dbUserProvider, jwtDriver)
+	if err != nil {
+		return nil, err
+	}
 	validator, err := gp.New()
 	if err != nil {
 		return nil, err
 	}
-	authHandler := http.NewAuthHandler(authenticateUser, refreshAccessToken, validator)
+	authHandler := http.NewAuthHandler(provider, validator)
 	dashboardGormStore := dashboard.NewStore(gormDB, logger)
 	dashboardService := dashboard.NewService(dashboardGormStore, logger)
 	dashboardHandler := http.NewDashboardHandler(dashboardService, logger)
@@ -77,7 +71,10 @@ func InitApp() (*App, error) {
 	gormTxManager := db.NewTxManager(gormDB)
 	createInvoice := app.NewCreateInvoice(service, invoiceService, gormTxManager, logger)
 	invoiceHandler := http.NewInvoiceHandler(invoiceService, createInvoice, validator, logger)
-	routeInitializer := http.SetupFiberRoutes(fiberServer, token, authHandler, dashboardHandler, userHandler, customerHandler, invoiceHandler)
-	bootstrapApp := NewApp(configConfig, closer, logger, fiberServer, bootstrapTimezoneInitializer, registerInitializer, routeInitializer)
+	routeInitializer := http.SetupFiberRoutes(fiberServer, provider, authHandler, dashboardHandler, userHandler, customerHandler, invoiceHandler)
+	bootstrapApp, err := AppProvider(configConfig, gormDB, logger, fiberServer, registerInitializer, routeInitializer)
+	if err != nil {
+		return nil, err
+	}
 	return bootstrapApp, nil
 }

@@ -1,12 +1,14 @@
 package http
 
-import "github.com/gelozr/go-dash/internal/auth"
+import (
+	"github.com/gelozr/go-dash/internal/auth"
+)
 
 type RouteInitializer struct{}
 
 func SetupFiberRoutes(
 	s *FiberServer,
-	authSvc *auth.Token,
+	auth auth.Auth,
 	authH *AuthHandler,
 	dashH *DashboardHandler,
 	userH *UserHandler,
@@ -24,7 +26,8 @@ func SetupFiberRoutes(
 	}
 
 	// dashboard routes
-	dg := r.Group("/dash", loggerKeyMiddleware("http.dashboard"), AuthMiddleware(authSvc))
+	// dg := r.Group("/dash", loggerKeyMiddleware("http.dashboard"), AuthMiddleware(authSvc))
+	dg := r.Group("/dash", loggerKeyMiddleware("http.dashboard"), AuthMiddleware(auth, "jwt"))
 	{
 		dg.Get("/overview", dashH.GetOverview)
 		dg.Get("/revenues", dashH.GetMonthlyRevenues)

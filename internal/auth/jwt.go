@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -9,26 +10,45 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/gelozr/go-dash/internal/config"
+	"github.com/gelozr/go-dash/internal/user"
 )
+
+type AccessToken struct {
+	AccessToken  string
+	RefreshToken string
+	ExpiresIn    int
+}
+
+type AccessClaims struct {
+	Issuer    string
+	Subject   string
+	Audience  []string
+	ExpiresAt time.Time
+	NotBefore time.Time
+	IssuedAt  time.Time
+	ID        string
+
+	UserID uuid.UUID
+}
 
 type JWTClaims struct {
 	UserID uuid.UUID
 	jwt.RegisteredClaims
 }
 
-type GOJWT struct {
-	hmacKey []byte
+type JWTDriver struct {
+	hmacKey           []byte
+	refreshSessionSvc *Token
 }
 
-var _ JWT = (*GOJWT)(nil)
-
-func NewGOJWT(cfg *config.Config) *GOJWT {
-	return &GOJWT{
-		hmacKey: []byte(cfg.JWTHmacKey),
+func NewJWTDriver(cfg *config.Config, refreshSessionSvc *Token) *JWTDriver {
+	return &JWTDriver{
+		hmacKey:           []byte(cfg.JWTHmacKey),
+		refreshSessionSvc: refreshSessionSvc,
 	}
 }
 
-func (g *GOJWT) Sign(uid uuid.UUID) (string, time.Time, error) {
+func (d *JWTDriver) Sign(uid uuid.UUID) (string, time.Time, error) {
 	claims := JWTClaims{
 		UserID: uid,
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -41,7 +61,7 @@ func (g *GOJWT) Sign(uid uuid.UUID) (string, time.Time, error) {
 
 	tok := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	signed, err := tok.SignedString(g.hmacKey)
+	signed, err := tok.SignedString(d.hmacKey)
 	if err != nil {
 		return "", time.Now(), fmt.Errorf("signing token: %w", err)
 	}
@@ -54,9 +74,9 @@ func (g *GOJWT) Sign(uid uuid.UUID) (string, time.Time, error) {
 	return signed, exp.Time, nil
 }
 
-func (g *GOJWT) Parse(tokenStr string) (AccessClaims, error) {
+func (d *JWTDriver) Parse(tokenStr string) (AccessClaims, error) {
 	tok, err := jwt.ParseWithClaims(tokenStr, &JWTClaims{}, func(t *jwt.Token) (any, error) {
-		return g.hmacKey, nil
+		return d.hmacKey, nil
 	})
 
 	if err != nil {
@@ -84,4 +104,79 @@ func (g *GOJWT) Parse(tokenStr string) (AccessClaims, error) {
 	}
 
 	return claims, nil
+}
+
+func (d *JWTDriver) IssueToken(ctx context.Context, user User) (any, error) {
+	uid, ok := user.UserID().(uuid.UUID)
+	if !ok {
+		return nil, errors.New("invalid user id")
+	}
+
+	jwtStr, exp, err := d.Sign(uid)
+	if err != nil {
+		return nil, fmt.Errorf("sign jwt: %w", err)
+	}
+
+	refreshSess, err := d.refreshSessionSvc.CreateRefresh(ctx, uid)
+	if err != nil {
+		return nil, fmt.Errorf("create refresh session: %w", err)
+	}
+
+	accessToken := AccessToken{
+		AccessToken:  jwtStr,
+		RefreshToken: refreshSess.ID.String(),
+		ExpiresIn:    int(time.Until(exp).Seconds()),
+	}
+
+	return accessToken, nil
+}
+
+func (d *JWTDriver) Login(ctx context.Context, user User) (any, error) {
+	return d.IssueToken(ctx, user)
+}
+
+func (d *JWTDriver) Verify(_ context.Context, payload any) (Verified, error) {
+	token, ok := payload.(string)
+	if !ok {
+		return Verified{}, errors.New("invalid jwt payload")
+	}
+
+	claims, err := d.Parse(token)
+	if err != nil {
+		return Verified{}, fmt.Errorf("parse token: %w", err)
+	}
+
+	return Verified{
+		User: user.User{ID: claims.UserID},
+	}, nil
+}
+
+func (d *JWTDriver) RefreshToken(ctx context.Context, refreshToken string) (any, error) {
+	refreshTokenID, err := uuid.Parse(refreshToken)
+	if err != nil {
+		return nil, ErrRefreshTokenInvalid
+	}
+
+	currRefresh, err := d.refreshSessionSvc.GetRefresh(ctx, refreshTokenID)
+	if err != nil {
+		return nil, fmt.Errorf("get refresh session: %w", err)
+	}
+
+	newRefresh, err := d.refreshSessionSvc.ExchangeRefresh(ctx, currRefresh)
+	if err != nil {
+		return nil, fmt.Errorf("exchange refresh: %w", err)
+	}
+
+	jwtStr, exp, err := d.Sign(newRefresh.UserID)
+	if err != nil {
+		return nil, fmt.Errorf("sign jwt: %w", err)
+	}
+
+	accessToken := AccessToken{
+		AccessToken:  jwtStr,
+		RefreshToken: newRefresh.ID.String(),
+		ExpiresIn:    int(time.Until(exp).Seconds()),
+	}
+
+	return accessToken, nil
 }

@@ -8,3 +8,7 @@ type User struct {
 	Email    string
 	Password string
 }
+
+func (u User) UserID() any {
+	return u.ID
+}

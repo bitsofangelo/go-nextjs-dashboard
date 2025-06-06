@@ -7,7 +7,6 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
 
-	"github.com/gelozr/go-dash/internal/app"
 	"github.com/gelozr/go-dash/internal/auth"
 	"github.com/gelozr/go-dash/internal/http/request"
 	"github.com/gelozr/go-dash/internal/http/response"
@@ -16,16 +15,14 @@ import (
 )
 
 type AuthHandler struct {
-	authUser           *app.AuthenticateUser
-	refreshAccessToken *app.RefreshAccessToken
-	validator          validation.Validator
+	auth      auth.Auth
+	validator validation.Validator
 }
 
-func NewAuthHandler(authUser *app.AuthenticateUser, refreshAccessToken *app.RefreshAccessToken, validator validation.Validator) *AuthHandler {
+func NewAuthHandler(auth auth.Auth, validator validation.Validator) *AuthHandler {
 	return &AuthHandler{
-		authUser:           authUser,
-		refreshAccessToken: refreshAccessToken,
-		validator:          validator,
+		auth:      auth,
+		validator: validator,
 	}
 }
 
@@ -47,18 +44,34 @@ func (h *AuthHandler) Login(c fiber.Ctx) error {
 		Password: req.Password,
 	}
 
-	accessToken, err := h.authUser.Execute(ctx, creds)
+	usr, err := h.auth.MustGuard("jwt").Authenticate(ctx, creds)
 	if err != nil {
 		switch {
 		case errors.Is(err, user.ErrUserNotFound), errors.Is(err, auth.ErrPasswordIncorrect):
 			return fiber.NewError(fiber.StatusUnauthorized, "invalid credentials")
 		default:
-			return fmt.Errorf("error executing login: %w", err)
+			return fmt.Errorf("authenticate user: %w", err)
 		}
 	}
 
+	login, err := h.auth.Login(ctx, usr)
+	if err != nil && !errors.Is(err, auth.ErrLoginNotSupported) {
+		switch {
+		default:
+			return fmt.Errorf("login: %w", err)
+		}
+	}
+
+	var r any
+	switch v := login.(type) {
+	case auth.AccessToken:
+		r = response.ToAccessToken(v)
+	default:
+		r = true
+	}
+
 	return c.JSON(
-		response.New(response.ToAccessToken(accessToken)),
+		response.New(r),
 	)
 }
 
@@ -80,19 +93,28 @@ func (h *AuthHandler) Refresh(c fiber.Ctx) error {
 		return response.NewError("invalid refresh token", fiber.StatusUnauthorized, err)
 	}
 
-	accessToken, err := h.refreshAccessToken.Execute(ctx, tokenID)
+	token, err := h.auth.RefreshToken(ctx, tokenID.String())
 	if err != nil {
 		switch {
 		case errors.Is(err, auth.ErrRefreshSessionNotFound),
 			errors.Is(err, auth.ErrRefreshTokenUserMismatch),
-			errors.Is(err, auth.ErrRefreshTokenUsed):
+			errors.Is(err, auth.ErrRefreshTokenUsed),
+			errors.Is(err, auth.ErrRefreshTokenInvalid):
 			return fiber.NewError(fiber.StatusUnauthorized, "invalid refresh token")
 		default:
 			return fmt.Errorf("refresh access token: %w", err)
 		}
 	}
 
+	var res any
+	switch v := token.(type) {
+	case auth.AccessToken:
+		res = response.ToAccessToken(v)
+	default:
+		return fmt.Errorf("failed to refresh token")
+	}
+
 	return c.JSON(
-		response.New(response.ToAccessToken(accessToken)),
+		response.New(res),
 	)
 }

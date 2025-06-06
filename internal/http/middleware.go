@@ -32,28 +32,39 @@ var (
 	userIDCtxKey    = ctxKey("user_id")
 )
 
-func AuthMiddleware(token *auth.Token) fiber.Handler {
+func AuthMiddleware(a auth.Auth, guard string) fiber.Handler {
 	return func(c fiber.Ctx) error {
-		tokenStr := strings.TrimPrefix(c.Get("Authorization"), "Bearer ")
-		if tokenStr == "" {
-			return fiber.NewError(http.StatusUnauthorized, "missing authorization header")
-		}
-
-		claims, err := token.ParseJWT(tokenStr)
+		g, err := a.Guard(guard)
 		if err != nil {
-			switch {
-			case errors.Is(err, auth.ErrJWTInvalid):
-				return fiber.NewError(http.StatusUnauthorized, "invalid token")
-			case errors.Is(err, auth.ErrJWTExpired):
-				return fiber.NewError(http.StatusUnauthorized, "expired token")
-			default:
-				return fmt.Errorf("parse token: %w", err)
-			}
+			return fmt.Errorf("guard: %w", err)
 		}
 
-		ctx := context.WithValue(c.Context(), userIDCtxKey, claims.UserID)
-		c.SetContext(ctx)
+		var verified auth.Verified
 
+		switch guard {
+		case "jwt":
+			token := strings.TrimPrefix(c.Get("Authorization"), "Bearer ")
+			if token == "" {
+				return fiber.NewError(http.StatusUnauthorized, "missing authorization header")
+			}
+
+			verified, err = g.Check(c.Context(), token)
+			if err != nil {
+				switch {
+				case errors.Is(err, auth.ErrJWTInvalid):
+					return fiber.NewError(http.StatusUnauthorized, "invalid token")
+				case errors.Is(err, auth.ErrJWTExpired):
+					return fiber.NewError(http.StatusUnauthorized, "expired token")
+				default:
+					return fmt.Errorf("parse token: %w", err)
+				}
+			}
+
+		default:
+			return fmt.Errorf("auth middleware: unknown guard '%s'", guard)
+		}
+
+		c.SetContext(verified.Context())
 		return c.Next()
 	}
 }

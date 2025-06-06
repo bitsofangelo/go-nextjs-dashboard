@@ -2,8 +2,6 @@ package bootstrap
 
 import (
 	"fmt"
-	"io"
-	"time"
 
 	"github.com/google/wire"
 	"gorm.io/gorm"
@@ -27,20 +25,18 @@ import (
 	"github.com/gelozr/go-dash/internal/user"
 )
 
-var AppProviders = wire.NewSet(
+var AppServiceProviders = wire.NewSet(
 	// CONFIG
 	config.Load,
-	setTimezone,
+
+	// LOGGER
+	slog.New,
+	wire.Bind(new(logger.Logger), new(*slog.Logger)),
 
 	// DB
 	db.Open,
 	db.NewTxManager,
 	wire.Bind(new(db.TxManager), new(*db.GormTxManager)),
-	DBCloserProvider,
-
-	// LOGGER
-	slog.New,
-	wire.Bind(new(logger.Logger), new(*slog.Logger)),
 
 	// EVENT
 	event.NewBroker,
@@ -59,13 +55,18 @@ var AppProviders = wire.NewSet(
 	wire.Bind(new(mail.Mailer), new(mail.Manager)),
 
 	// AUTH
-	AuthDBProvider,
-	wire.Bind(new(auth.Authenticator[user.User]), new(*auth.DBProvider[user.User])),
 	auth.NewGormRefreshStore,
 	wire.Bind(new(auth.RefreshStore), new(*auth.GormRefreshStore)),
-	auth.NewGOJWT,
-	wire.Bind(new(auth.JWT), new(*auth.GOJWT)),
 	auth.NewToken,
+	auth.NewDBUserProvider,
+	auth.NewJWTDriver,
+	AuthProvider,
+	wire.Bind(new(auth.Authenticator), new(*auth.Provider)),
+	wire.Bind(new(auth.LoginHandler), new(*auth.Provider)),
+	wire.Bind(new(auth.LogoutHandler), new(*auth.Provider)),
+	wire.Bind(new(auth.Checker), new(*auth.Provider)),
+	wire.Bind(new(auth.TokenRefresher), new(*auth.Provider)),
+	wire.Bind(new(auth.Auth), new(*auth.Provider)),
 
 	// STORE & SERVICES
 	customer.NewStore,
@@ -85,8 +86,6 @@ var AppProviders = wire.NewSet(
 	invoice.NewService,
 
 	// USE CASES
-	app.NewAuthenticateUser,
-	app.NewRefreshAccessToken,
 	app.NewCreateInvoice,
 )
 
@@ -100,32 +99,38 @@ var HTTPProviders = wire.NewSet(
 
 	// ENGINE
 	http.NewFiberServer,
-	wire.Bind(new(Server), new(*http.FiberServer)),
+	// wire.Bind(new(Server), new(*http.FiberServer)),
 
 	// ROUTES
 	http.SetupFiberRoutes,
 )
 
-type timezoneInitializer struct{}
+func AuthProvider(dbUserProvider *auth.DBUserProvider, jwtDriver *auth.JWTDriver) (*auth.Provider, error) {
+	a := auth.New()
 
-func setTimezone(cfg *config.Config) (timezoneInitializer, error) {
-	loc, err := time.LoadLocation(cfg.AppTimezone)
-	if err != nil {
-		return timezoneInitializer{}, fmt.Errorf("failed to load timezone: %w", err)
+	if err := a.Extend("jwt", auth.GuardOption{Driver: jwtDriver, UserProvider: dbUserProvider}); err != nil {
+		return nil, fmt.Errorf("auth extend: %w", err)
 	}
-	time.Local = loc
 
-	return timezoneInitializer{}, nil
+	if err := a.SetDefaultGuard("jwt"); err != nil {
+		return nil, fmt.Errorf("set default guard: %w", err)
+	}
+
+	return a, nil
 }
 
-func AuthDBProvider(userSvc *user.Service, hash hashing.Manager) *auth.DBProvider[user.User] {
-	return auth.NewDBProvider[user.User](userSvc, hash)
-}
-
-func DBCloserProvider(db *gorm.DB) (io.Closer, error) {
-	rawDB, err := db.DB()
+func AppProvider(
+	cfg *config.Config,
+	db *gorm.DB,
+	logger logger.Logger,
+	fiberServer *http.FiberServer,
+	_ registry.RegisterInitializer,
+	_ http.RouteInitializer,
+) (*App, error) {
+	sqlDB, err := db.DB()
 	if err != nil {
 		return nil, fmt.Errorf("failed to sql db: %w", err)
 	}
-	return rawDB, nil
+
+	return NewApp(cfg, sqlDB, logger, fiberServer), nil
 }
