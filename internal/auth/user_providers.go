@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/gelozr/forge/auth"
+
 	"github.com/gelozr/go-dash/internal/hashing"
 	"github.com/gelozr/go-dash/internal/user"
 )
@@ -19,7 +21,7 @@ type DBUserProvider struct {
 	hash    hashing.Hasher
 }
 
-var _ UserProvider = (*DBUserProvider)(nil)
+var _ auth.UserProvider = (*DBUserProvider)(nil)
 
 func NewDBUserProvider(userSvc *user.Service, hash hashing.Manager) *DBUserProvider {
 	return &DBUserProvider{
@@ -28,7 +30,7 @@ func NewDBUserProvider(userSvc *user.Service, hash hashing.Manager) *DBUserProvi
 	}
 }
 
-func (p DBUserProvider) FindByCredentials(ctx context.Context, credentials Credentials) (User, error) {
+func (p DBUserProvider) FindByCredentials(ctx context.Context, credentials auth.Credentials) (auth.User, error) {
 	creds, ok := credentials.(PasswordCredentials)
 	if !ok {
 		return nil, errors.New("invalid credentials type")

@@ -6,6 +6,8 @@ import (
 	"github.com/google/wire"
 	"gorm.io/gorm"
 
+	forgeauth "github.com/gelozr/forge/auth"
+
 	"github.com/gelozr/go-dash/internal/app"
 	"github.com/gelozr/go-dash/internal/auth"
 	"github.com/gelozr/go-dash/internal/config"
@@ -61,12 +63,12 @@ var AppServiceProviders = wire.NewSet(
 	auth.NewDBUserProvider,
 	auth.NewJWTDriver,
 	AuthProvider,
-	wire.Bind(new(auth.Authenticator), new(*auth.Provider)),
-	wire.Bind(new(auth.LoginHandler), new(*auth.Provider)),
-	wire.Bind(new(auth.LogoutHandler), new(*auth.Provider)),
-	wire.Bind(new(auth.Checker), new(*auth.Provider)),
-	wire.Bind(new(auth.TokenRefresher), new(*auth.Provider)),
-	wire.Bind(new(auth.Auth), new(*auth.Provider)),
+	wire.Bind(new(forgeauth.Authenticator), new(*forgeauth.Provider)),
+	wire.Bind(new(forgeauth.LoginHandler), new(*forgeauth.Provider)),
+	wire.Bind(new(forgeauth.LogoutHandler), new(*forgeauth.Provider)),
+	wire.Bind(new(forgeauth.Checker), new(*forgeauth.Provider)),
+	wire.Bind(new(forgeauth.TokenRefresher), new(*forgeauth.Provider)),
+	wire.Bind(new(forgeauth.Auth), new(*forgeauth.Provider)),
 
 	// STORE & SERVICES
 	customer.NewStore,
@@ -105,10 +107,10 @@ var HTTPProviders = wire.NewSet(
 	http.SetupFiberRoutes,
 )
 
-func AuthProvider(dbUserProvider *auth.DBUserProvider, jwtDriver *auth.JWTDriver) (*auth.Provider, error) {
-	a := auth.New()
+func AuthProvider(dbUserProvider *auth.DBUserProvider, jwtDriver *auth.JWTDriver) (*forgeauth.Provider, error) {
+	a := forgeauth.New()
 
-	if err := a.Extend("jwt", auth.GuardOption{Driver: jwtDriver, UserProvider: dbUserProvider}); err != nil {
+	if err := a.Extend("jwt", forgeauth.GuardOption{Driver: jwtDriver, UserProvider: dbUserProvider}); err != nil {
 		return nil, fmt.Errorf("auth extend: %w", err)
 	}
 

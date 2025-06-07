@@ -12,7 +12,8 @@ import (
 	"github.com/gofiber/fiber/v3/middleware/limiter"
 	"github.com/google/uuid"
 
-	"github.com/gelozr/go-dash/internal/auth"
+	"github.com/gelozr/forge/auth"
+
 	"github.com/gelozr/go-dash/internal/http/response"
 	"github.com/gelozr/go-dash/internal/http/validation"
 )
@@ -32,23 +33,23 @@ var (
 	userIDCtxKey    = ctxKey("user_id")
 )
 
-func AuthMiddleware(a auth.Auth, guard string) fiber.Handler {
+func AuthMiddleware(a auth.Auth, guardName string) fiber.Handler {
 	return func(c fiber.Ctx) error {
-		g, err := a.Guard(guard)
+		guard, err := a.Guard(guardName)
 		if err != nil {
 			return fmt.Errorf("guard: %w", err)
 		}
 
 		var verified auth.Verified
 
-		switch guard {
+		switch guardName {
 		case "jwt":
 			token := strings.TrimPrefix(c.Get("Authorization"), "Bearer ")
 			if token == "" {
 				return fiber.NewError(http.StatusUnauthorized, "missing authorization header")
 			}
 
-			verified, err = g.Check(c.Context(), token)
+			verified, err = guard.Check(c.Context(), token)
 			if err != nil {
 				switch {
 				case errors.Is(err, auth.ErrJWTInvalid):

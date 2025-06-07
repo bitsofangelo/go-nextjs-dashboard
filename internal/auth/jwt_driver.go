@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/gelozr/forge/auth"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 
@@ -106,7 +107,7 @@ func (d *JWTDriver) Parse(tokenStr string) (AccessClaims, error) {
 	return claims, nil
 }
 
-func (d *JWTDriver) IssueToken(ctx context.Context, user User) (any, error) {
+func (d *JWTDriver) IssueToken(ctx context.Context, user auth.User) (any, error) {
 	uid, ok := user.UserID().(uuid.UUID)
 	if !ok {
 		return nil, errors.New("invalid user id")
@@ -131,22 +132,22 @@ func (d *JWTDriver) IssueToken(ctx context.Context, user User) (any, error) {
 	return accessToken, nil
 }
 
-func (d *JWTDriver) Login(ctx context.Context, user User) (any, error) {
+func (d *JWTDriver) Login(ctx context.Context, user auth.User) (any, error) {
 	return d.IssueToken(ctx, user)
 }
 
-func (d *JWTDriver) Verify(_ context.Context, payload any) (Verified, error) {
+func (d *JWTDriver) Validate(_ context.Context, payload any) (auth.Verified, error) {
 	token, ok := payload.(string)
 	if !ok {
-		return Verified{}, errors.New("invalid jwt payload")
+		return auth.Verified{}, errors.New("invalid jwt payload")
 	}
 
 	claims, err := d.Parse(token)
 	if err != nil {
-		return Verified{}, fmt.Errorf("parse token: %w", err)
+		return auth.Verified{}, fmt.Errorf("parse token: %w", err)
 	}
 
-	return Verified{
+	return auth.Verified{
 		User: user.User{ID: claims.UserID},
 	}, nil
 }

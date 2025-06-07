@@ -5,9 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"sync"
-	"time"
-
-	"github.com/google/uuid"
 )
 
 var (
@@ -15,13 +12,23 @@ var (
 	ErrLogoutNotSupported       = errors.New("logout not supported")
 	ErrRefreshTokenNotSupported = errors.New("logout not supported")
 	ErrPasswordIncorrect        = errors.New("password incorrect")
-	ErrJWTExpired               = errors.New("JWTDriver is expired")
-	ErrJWTInvalid               = errors.New("JWTDriver is invalid")
+	ErrJWTExpired               = errors.New("JWT is expired")
+	ErrJWTInvalid               = errors.New("JWT is invalid")
 	ErrRefreshTokenExpired      = errors.New("refresh token is expired")
 	ErrRefreshTokenUserMismatch = errors.New("token user does not match")
 	ErrRefreshTokenUsed         = errors.New("refresh token is used")
 	ErrRefreshTokenInvalid      = errors.New("refresh token is used")
 )
+
+type Verified struct {
+	ctx    context.Context
+	User   User
+	Scopes []string
+}
+
+func (v Verified) Context() context.Context {
+	return v.ctx
+}
 
 type GuardOption struct {
 	Driver       Driver
@@ -162,74 +169,6 @@ func (a *Provider) SetDefaultGuard(name string) error {
 
 	a.defaultGuard = name
 	return nil
-}
-
-type Token struct {
-	refreshStore RefreshStore
-	// logger       logger.Logger
-}
-
-func NewToken(refreshStore RefreshStore) *Token {
-	return &Token{
-		refreshStore: refreshStore,
-		// logger:       logger.With("component", "auth"),
-	}
-}
-
-func (a *Token) GetRefresh(ctx context.Context, id uuid.UUID) (RefreshSession, error) {
-	r, err := a.refreshStore.Get(ctx, id)
-	if err != nil {
-		return RefreshSession{}, fmt.Errorf("get refresh: %w", err)
-	}
-	return r, nil
-}
-
-func (a *Token) CreateRefresh(ctx context.Context, uid uuid.UUID) (RefreshSession, error) {
-	r, err := a.refreshStore.Insert(ctx, RefreshSession{
-		ID:        uuid.New(),
-		UserID:    uid,
-		Used:      false,
-		ExpiresAt: time.Now().Add(7 * 24 * time.Hour),
-		CreatedAt: time.Now(),
-	})
-
-	if err != nil {
-		return RefreshSession{}, fmt.Errorf("create refresh session: %w", err)
-	}
-
-	return r, nil
-}
-
-func (a *Token) ExchangeRefresh(ctx context.Context, currRefresh RefreshSession) (RefreshSession, error) {
-	if currRefresh.ExpiresAt.Before(time.Now()) {
-		return RefreshSession{}, ErrRefreshTokenExpired
-	}
-
-	if currRefresh.Used {
-		return RefreshSession{}, ErrRefreshTokenUsed
-	}
-
-	currRefresh.Used = true
-	if err := a.refreshStore.Update(ctx, currRefresh); err != nil {
-		return RefreshSession{}, fmt.Errorf("update refresh session: %w", err)
-	}
-
-	newRefresh, err := a.CreateRefresh(ctx, currRefresh.UserID)
-	if err != nil {
-		return RefreshSession{}, fmt.Errorf("create refresh token: %w", err)
-	}
-
-	return newRefresh, nil
-}
-
-type Verified struct {
-	ctx    context.Context
-	User   User
-	Scopes []string
-}
-
-func (v Verified) Context() context.Context {
-	return v.ctx
 }
 
 type ctxKey string

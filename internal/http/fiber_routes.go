@@ -1,14 +1,14 @@
 package http
 
 import (
-	"github.com/gelozr/go-dash/internal/auth"
+	"github.com/gelozr/forge/auth"
 )
 
 type RouteInitializer struct{}
 
 func SetupFiberRoutes(
 	s *FiberServer,
-	auth auth.Auth,
+	auth *auth.Provider,
 	authH *AuthHandler,
 	dashH *DashboardHandler,
 	userH *UserHandler,
