@@ -8,12 +8,12 @@ import (
 	"net/http"
 	"strings"
 
+	himoauth "github.com/gelozr/himo/auth2"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/limiter"
 	"github.com/google/uuid"
 
-	"github.com/gelozr/forge/auth"
-
+	"github.com/gelozr/go-dash/internal/auth"
 	"github.com/gelozr/go-dash/internal/http/response"
 	"github.com/gelozr/go-dash/internal/http/validation"
 )
@@ -33,14 +33,14 @@ var (
 	userIDCtxKey    = ctxKey("user_id")
 )
 
-func AuthMiddleware(a auth.Auth, guardName string) fiber.Handler {
+func AuthMiddleware(a himoauth.Auth, guardName string) fiber.Handler {
 	return func(c fiber.Ctx) error {
-		guard, err := a.Guard(guardName)
+		guard, err := a.Handler(guardName)
 		if err != nil {
 			return fmt.Errorf("guard: %w", err)
 		}
 
-		var verified auth.Verified
+		var verified himoauth.Verified[any]
 
 		switch guardName {
 		case "jwt":
@@ -49,7 +49,7 @@ func AuthMiddleware(a auth.Auth, guardName string) fiber.Handler {
 				return fiber.NewError(http.StatusUnauthorized, "missing authorization header")
 			}
 
-			verified, err = guard.Check(c.Context(), token)
+			verified, err = guard.Validate(c.Context(), token)
 			if err != nil {
 				switch {
 				case errors.Is(err, auth.ErrJWTInvalid):
@@ -65,7 +65,9 @@ func AuthMiddleware(a auth.Auth, guardName string) fiber.Handler {
 			return fmt.Errorf("auth middleware: unknown guard '%s'", guard)
 		}
 
-		c.SetContext(verified.Context())
+		ctx := himoauth.WithUserCtx(c.Context(), verified)
+
+		c.SetContext(ctx)
 		return c.Next()
 	}
 }

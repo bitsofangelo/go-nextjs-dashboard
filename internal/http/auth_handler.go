@@ -7,7 +7,7 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
 
-	forgeauth "github.com/gelozr/forge/auth"
+	himoauth "github.com/gelozr/himo/auth2"
 
 	"github.com/gelozr/go-dash/internal/auth"
 	"github.com/gelozr/go-dash/internal/http/request"
@@ -17,11 +17,11 @@ import (
 )
 
 type AuthHandler struct {
-	auth      forgeauth.Auth
+	auth      himoauth.Auth
 	validator validation.Validator
 }
 
-func NewAuthHandler(auth forgeauth.Auth, validator validation.Validator) *AuthHandler {
+func NewAuthHandler(auth himoauth.Auth, validator validation.Validator) *AuthHandler {
 	return &AuthHandler{
 		auth:      auth,
 		validator: validator,
@@ -46,10 +46,10 @@ func (h *AuthHandler) Login(c fiber.Ctx) error {
 		Password: req.Password,
 	}
 
-	usr, err := h.auth.MustGuard("jwt").Authenticate(ctx, creds)
+	usr, err := h.auth.MustHandler("jwt").Authenticate(ctx, creds)
 	if err != nil {
 		switch {
-		case errors.Is(err, user.ErrUserNotFound), errors.Is(err, forgeauth.ErrPasswordIncorrect):
+		case errors.Is(err, user.ErrUserNotFound), errors.Is(err, auth.ErrPasswordIncorrect):
 			return fiber.NewError(fiber.StatusUnauthorized, "invalid credentials")
 		default:
 			return fmt.Errorf("authenticate user: %w", err)
@@ -57,7 +57,7 @@ func (h *AuthHandler) Login(c fiber.Ctx) error {
 	}
 
 	login, err := h.auth.Login(ctx, usr)
-	if err != nil && !errors.Is(err, forgeauth.ErrLoginNotSupported) {
+	if err != nil && !errors.Is(err, himoauth.ErrLoginNotSupported) {
 		switch {
 		default:
 			return fmt.Errorf("login: %w", err)
@@ -99,9 +99,9 @@ func (h *AuthHandler) Refresh(c fiber.Ctx) error {
 	if err != nil {
 		switch {
 		case errors.Is(err, auth.ErrRefreshSessionNotFound),
-			errors.Is(err, forgeauth.ErrRefreshTokenUserMismatch),
-			errors.Is(err, forgeauth.ErrRefreshTokenUsed),
-			errors.Is(err, forgeauth.ErrRefreshTokenInvalid):
+			errors.Is(err, auth.ErrRefreshTokenUserMismatch),
+			errors.Is(err, auth.ErrRefreshTokenUsed),
+			errors.Is(err, auth.ErrRefreshTokenInvalid):
 			return fiber.NewError(fiber.StatusUnauthorized, "invalid refresh token")
 		default:
 			return fmt.Errorf("refresh access token: %w", err)

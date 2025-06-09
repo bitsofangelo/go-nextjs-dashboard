@@ -3,11 +3,11 @@ module github.com/gelozr/go-dash
 go 1.24.4
 
 
-replace github.com/gelozr/forge => ../../projects/forge
+replace github.com/gelozr/himo => ../../projects/himo
 
 require (
 	github.com/alexedwards/argon2id v1.0.0
-	github.com/gelozr/forge v0.0.0-00010101000000-000000000000
+	github.com/gelozr/himo v0.0.0-00010101000000-000000000000
 	github.com/go-playground/locales v0.14.1
 	github.com/go-playground/universal-translator v0.18.1
 	github.com/go-playground/validator/v10 v10.26.0

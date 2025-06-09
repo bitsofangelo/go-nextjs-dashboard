@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gelozr/forge/auth"
+	auth "github.com/gelozr/himo/auth2"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 
@@ -107,18 +107,18 @@ func (d *JWTDriver) Parse(tokenStr string) (AccessClaims, error) {
 	return claims, nil
 }
 
-func (d *JWTDriver) IssueToken(ctx context.Context, user auth.User) (any, error) {
-	uid, ok := user.UserID().(uuid.UUID)
+func (d *JWTDriver) IssueToken(ctx context.Context, usr any) (any, error) {
+	u, ok := usr.(*user.User)
 	if !ok {
 		return nil, errors.New("invalid user id")
 	}
 
-	jwtStr, exp, err := d.Sign(uid)
+	jwtStr, exp, err := d.Sign(u.ID)
 	if err != nil {
 		return nil, fmt.Errorf("sign jwt: %w", err)
 	}
 
-	refreshSess, err := d.refreshSessionSvc.CreateRefresh(ctx, uid)
+	refreshSess, err := d.refreshSessionSvc.CreateRefresh(ctx, u.ID)
 	if err != nil {
 		return nil, fmt.Errorf("create refresh session: %w", err)
 	}
@@ -132,22 +132,22 @@ func (d *JWTDriver) IssueToken(ctx context.Context, user auth.User) (any, error)
 	return accessToken, nil
 }
 
-func (d *JWTDriver) Login(ctx context.Context, user auth.User) (any, error) {
+func (d *JWTDriver) Login(ctx context.Context, user any) (any, error) {
 	return d.IssueToken(ctx, user)
 }
 
-func (d *JWTDriver) Validate(_ context.Context, payload any) (auth.Verified, error) {
+func (d *JWTDriver) Validate(ctx context.Context, payload any) (auth.Verified[any], error) {
 	token, ok := payload.(string)
 	if !ok {
-		return auth.Verified{}, errors.New("invalid jwt payload")
+		return auth.Verified[any]{}, errors.New("invalid jwt payload")
 	}
 
 	claims, err := d.Parse(token)
 	if err != nil {
-		return auth.Verified{}, fmt.Errorf("parse token: %w", err)
+		return auth.Verified[any]{}, fmt.Errorf("parse token: %w", err)
 	}
 
-	return auth.Verified{
+	return auth.Verified[any]{
 		User: user.User{ID: claims.UserID},
 	}, nil
 }

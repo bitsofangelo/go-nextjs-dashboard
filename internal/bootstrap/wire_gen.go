@@ -52,7 +52,7 @@ func InitApp() (*App, error) {
 	gormRefreshStore := auth.NewGormRefreshStore(gormDB, logger)
 	token := auth.NewToken(gormRefreshStore)
 	jwtDriver := auth.NewJWTDriver(configConfig, token)
-	provider, err := AuthProvider(dbUserProvider, jwtDriver)
+	auth2Manager, err := AuthProvider(dbUserProvider, jwtDriver)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +60,7 @@ func InitApp() (*App, error) {
 	if err != nil {
 		return nil, err
 	}
-	authHandler := http.NewAuthHandler(provider, validator)
+	authHandler := http.NewAuthHandler(auth2Manager, validator)
 	dashboardGormStore := dashboard.NewStore(gormDB, logger)
 	dashboardService := dashboard.NewService(dashboardGormStore, logger)
 	dashboardHandler := http.NewDashboardHandler(dashboardService, logger)
@@ -71,7 +71,7 @@ func InitApp() (*App, error) {
 	gormTxManager := db.NewTxManager(gormDB)
 	createInvoice := app.NewCreateInvoice(service, invoiceService, gormTxManager, logger)
 	invoiceHandler := http.NewInvoiceHandler(invoiceService, createInvoice, validator, logger)
-	routeInitializer := http.SetupFiberRoutes(fiberServer, provider, authHandler, dashboardHandler, userHandler, customerHandler, invoiceHandler)
+	routeInitializer := http.SetupFiberRoutes(fiberServer, auth2Manager, authHandler, dashboardHandler, userHandler, customerHandler, invoiceHandler)
 	bootstrapApp, err := AppProvider(configConfig, gormDB, logger, fiberServer, registerInitializer, routeInitializer)
 	if err != nil {
 		return nil, err
